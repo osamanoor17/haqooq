@@ -75,7 +75,9 @@ async def chat_audio(audio: UploadFile = File(...), history: str = Form(...)):
             formatted_history += f"{role}: {msg.get('content', '')}\n"
             
         # Generate Response
-        response = rag_chain.invoke({"question": user_query, "history": formatted_history})
+        # We append a hidden instruction to force Proper Urdu Script for Urdu queries, but allow English for English queries
+        audio_instruction = "\n[System: If the user's voice query is in English, reply in English. If the user's voice query is in Urdu or Roman Urdu, you MUST reply in Proper Urdu Script (اردو) so the Urdu TTS engine pronounces it correctly. Do NOT use Roman Urdu in your response.]"
+        response = rag_chain.invoke({"question": user_query + audio_instruction, "history": formatted_history})
         
         # Clean response for TTS
         tts_text = response

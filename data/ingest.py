@@ -1,6 +1,9 @@
 import os
+import io
+import requests
 import pandas as pd
 from datasets import load_dataset
+from pypdf import PdfReader
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -55,6 +58,44 @@ def ingest_data():
                 documents.append(Document(page_content=content, metadata=metadata))
     except Exception as e:
         print(f"Error loading Constitution dataset: {e}")
+
+    print("Loading Cybercrime PDFs (PECA & FIA Rules)...")
+    pdf_urls = [
+        "https://nacta.gov.pk/wp-content/uploads/2017/08/Prevention-of-Electronic-Crimes-Act-2016.pdf",
+        "https://na.gov.pk/uploads/documents/679b243193585_457.pdf",
+        "https://sja.gos.pk/assets/Updated_Laws/The%20Prevention%20of%20Electronic%20Crimes%20Act,%20Rules%20Final%20Index%20(%20Upto%20date%202025).pdf"
+    ]
+    
+    # Fake a standard browser user-agent to avoid HTTP 403 Forbidden errors
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+
+    for url in pdf_urls:
+        try:
+            print(f"Downloading PDF from {url}...")
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            pdf_file = io.BytesIO(response.content)
+            reader = PdfReader(pdf_file)
+            print(f"Extracting {len(reader.pages)} pages...")
+            
+            pdf_text = ""
+            for i, page in enumerate(reader.pages):
+                text = page.extract_text()
+                if text:
+                    pdf_text += f"\n--- Page {i+1} ---\n{text}"
+                    
+            if pdf_text.strip():
+                source_name = url.split('/')[-1]
+                # To help the retriever strongly match cybercrime queries, prepend a clear metadata string
+                enriched_text = f"Law: Prevention of Electronic Crimes Act (PECA) / FIA Cybercrime Law\n{pdf_text}"
+                documents.append(Document(page_content=enriched_text, metadata={"source": source_name}))
+                print(f"Successfully loaded {source_name}")
+                
+        except Exception as e:
+            print(f"Error loading PDF {url}: {e}")
 
     if not documents:
         print("No documents were loaded. Exiting.")

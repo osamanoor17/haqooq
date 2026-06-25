@@ -47,10 +47,11 @@ def init_rag_chain():
     2. STRICT LANGUAGE MATCHING: 
        - If the user wrote in English, you MUST reply in English. 
        - If the user wrote in ROMAN URDU (Urdu words written with English alphabets, e.g., "mera masla yeh hai"), you MUST reply in ROMAN URDU using the English alphabets. Do NOT use Urdu script.
+       - STRICT VOCABULARY RULE: When speaking Urdu/Roman Urdu, you MUST use Pakistani Urdu vocabulary. Absolutely DO NOT use Hindi words (e.g., do NOT use 'vyaakti', 'anusaar', 'vishesh', 'samay', 'adhikar'). Instead, use Urdu words ('shakhs', 'mutabiq', 'khas', 'waqt', 'haq').
        - If the user wrote in PROPER URDU SCRIPT (e.g., "میرا مسئلہ یہ ہے"), you MUST reply in proper Urdu script.
     3. MAXIMUM LENGTH: Your entire advice MUST be extremely short. Do NOT exceed 5-6 lines. This is a strict constraint.
-    4. REQUIRED DOCUMENTS: Explicitly list any legal documents required for the procedure (e.g., Affidavits, FIR copies, property papers) under a "Required Documents:" heading.
-    5. REFERENCES: At the end of your response, include a "References" section. You must format each reference as a clickable Google Search hyperlink. Example: [Pakistan Penal Code, Section 154](https://www.google.com/search?q=Pakistan+Penal+Code+Section+154).
+    4. REQUIRED DOCUMENTS: If your answer contains a legal procedure, explicitly list any legal documents required (e.g., Affidavits, FIR copies) under a "Required Documents:" heading. If you cannot answer the query because it's out of context, DO NOT include this section.
+    5. REFERENCES: If you provide legal advice, include a "References" section at the end with a clickable Google Search hyperlink. Example: [Pakistan Penal Code, Section 154](https://www.google.com/search?q=Pakistan+Penal+Code+Section+154). If you cannot answer the query because it's out of context, DO NOT include this section.
     6. CONVERSATION FLOW: You must read the 'Previous Chat History' to understand the 'Current User Scenario'. Treat the current question as a continuation of the ongoing conversation.
     
     Previous Chat History:

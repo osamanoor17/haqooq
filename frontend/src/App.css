@@ -672,3 +672,16 @@ body {
     font-size: 2rem;
   }
 }
+
+
+@keyframes pulse-record {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.mic-btn.recording {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  animation: pulse-record 1.5s infinite;
+}

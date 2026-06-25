@@ -319,7 +319,7 @@ function App() {
                   <input 
                     type="text" 
                     className="text-input" 
-                    placeholder="Message Haqooq AI..." 
+                    placeholder={isRecording ? "Recording... Speak now 🎙️" : "Message Haqooq AI..."} 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     disabled={isLoading || isRecording}

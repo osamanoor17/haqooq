@@ -60,13 +60,24 @@ async def chat_audio(audio: UploadFile = File(...), history: str = Form(...)):
             temp_audio.write(await audio.read())
             temp_path = temp_audio.name
             
-        # Transcribe
+        # Transcribe with auto-detection
         with open(temp_path, "rb") as f:
+            file_bytes = f.read()
             transcription = _groq_client.audio.transcriptions.create(
-                file=(os.path.basename(temp_path), f.read()),
+                file=(os.path.basename(temp_path), file_bytes),
                 model="whisper-large-v3",
             )
+        
         user_query = transcription.text
+        
+        # If Whisper auto-detected Hindi and outputted Devanagari script, force it to Urdu
+        if any('\u0900' <= c <= '\u097F' for c in user_query):
+            transcription = _groq_client.audio.transcriptions.create(
+                file=(os.path.basename(temp_path), file_bytes),
+                model="whisper-large-v3",
+                language="ur"
+            )
+            user_query = transcription.text
         os.remove(temp_path)
         
         formatted_history = ""

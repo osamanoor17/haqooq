@@ -1,5 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Send, Scale, FileText, Download, Shield, Globe, ArrowRight, Plus, MessageSquare } from 'lucide-react';
+import { 
+  Mic, Square, Send, Scale, FileText, Download, Shield, Globe, 
+  ArrowRight, Plus, MessageSquare, Copy, Check, Sparkles, BookOpen, 
+  Cpu, Award, ExternalLink, RefreshCw, Trash2, Volume2, ShieldCheck, HelpCircle
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,20 +11,50 @@ import './App.css';
 
 const API_URL = 'http://127.0.0.1:8000';
 
+const STARTER_QUERIES = [
+  {
+    icon: "🚨",
+    title: "FIR & Police Refusal",
+    desc: "Sections 154 & 22-A CrPC",
+    query: "Meri motorcycle bazaar se chori ho gayi hai aur police station mein SHO FIR darj karne se inkar kar raha hai. Sessions Court mein 22-A petition ka kya legal procedure hai?"
+  },
+  {
+    icon: "📱",
+    title: "WhatsApp Scam & Harassment",
+    desc: "PECA 2016 (Cybercrime)",
+    query: "I was scammed online through a fake investment WhatsApp group and lost money. Under which sections of PECA 2016 can I report this to the FIA?"
+  },
+  {
+    icon: "👨‍👩‍👧",
+    title: "Khula & Maintenance",
+    desc: "Muslim Family Laws 1961",
+    query: "Muslim Family Laws Ordinance 1961 ke mutabiq Khula lene ka mukammal legal procedure aur court mein zaroori kaghzaat kya hain?"
+  },
+  {
+    icon: "💳",
+    title: "Dishonored Cheque",
+    desc: "Section 489-F PPC",
+    query: "Mujhe kisi shakhs ne karobar ke silsilay mein cheque diya tha jo bank se bounce ho gaya. Pakistan Penal Code ke Section 489-F ke mutabiq legal procedure kya hai?"
+  }
+];
+
 function App() {
-  // Session State
+  // Sessions State
   const [sessions, setSessions] = useState([
-    { id: Date.now(), title: 'New Consultation', messages: [] }
+    { id: Date.now(), title: 'New Legal Consultation', messages: [] }
   ]);
   const [currentSessionId, setCurrentSessionId] = useState(sessions[0].id);
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   
   const messagesContainerRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
   const workspaceRef = useRef(null);
 
   const currentSession = sessions.find(s => s.id === currentSessionId) || sessions[0];
@@ -35,6 +69,18 @@ function App() {
     }
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    if (isRecording) {
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(recordingTimerRef.current);
+      setRecordingDuration(0);
+    }
+    return () => clearInterval(recordingTimerRef.current);
+  }, [isRecording]);
+
   const scrollToWorkspace = () => {
     workspaceRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -43,12 +89,11 @@ function App() {
     setSessions(prev => prev.map(s => {
       if (s.id === id) {
         let title = s.title;
-        // Auto-title if it's a new consultation
-        if (title === 'New Consultation' && newMessages.length > 0) {
+        if (title === 'New Legal Consultation' && newMessages.length > 0) {
           const firstUserMsg = newMessages.find(m => m.role === 'user');
           if (firstUserMsg) {
             let content = firstUserMsg.content.replace('[Voice Note]', '').trim();
-            title = content.substring(0, 30) + (content.length > 30 ? '...' : '');
+            title = content.substring(0, 32) + (content.length > 32 ? '...' : '');
           }
         }
         return { ...s, messages: newMessages, title };
@@ -58,36 +103,61 @@ function App() {
   };
 
   const startNewChat = () => {
-    // Don't create multiple empty chats
     if (messages.length === 0) return;
-    
     const newId = Date.now();
-    setSessions(prev => [{ id: newId, title: 'New Consultation', messages: [] }, ...prev]);
+    setSessions(prev => [{ id: newId, title: 'New Legal Consultation', messages: [] }, ...prev]);
     setCurrentSessionId(newId);
   };
 
-  const handleSendText = async (e) => {
-    e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const deleteSession = (id, e) => {
+    e.stopPropagation();
+    if (sessions.length === 1) {
+      setSessions([{ id: Date.now(), title: 'New Legal Consultation', messages: [] }]);
+      return;
+    }
+    const filtered = sessions.filter(s => s.id !== id);
+    setSessions(filtered);
+    if (currentSessionId === id) {
+      setCurrentSessionId(filtered[0].id);
+    }
+  };
 
-    const userMsg = input.trim();
+  const handleSendText = async (e, customQuery = null) => {
+    e?.preventDefault();
+    const queryToSend = customQuery || input;
+    if (!queryToSend.trim() || isLoading) return;
+
+    const userMsg = queryToSend.trim();
     setInput('');
     const newHistory = [...messages, { role: 'user', content: userMsg }];
     updateSessionMessages(currentSessionId, newHistory);
     setIsLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
     try {
       const res = await fetch(`${API_URL}/chat/text`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, history: messages }) // send previous history
+        body: JSON.stringify({ message: userMsg, history: messages }),
+        signal: controller.signal
       });
-      if (!res.ok) throw new Error('API Error');
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server returned ${res.status}: ${errText}`);
+      }
       const data = await res.json();
-      updateSessionMessages(currentSessionId, [...newHistory, { role: 'assistant', content: data.response }]);
+      updateSessionMessages(currentSessionId, [...newHistory, { role: 'assistant', content: data.response || "No response received." }]);
     } catch (error) {
-      updateSessionMessages(currentSessionId, [...newHistory, { role: 'assistant', content: 'Error connecting to server. Please try again.' }]);
+      console.error("Fetch error:", error);
+      const errorMsg = error.name === 'AbortError' 
+        ? '⚠️ Request timed out. Please ensure the backend server is running.'
+        : `⚠️ Error connecting to server: ${error.message}`;
+      updateSessionMessages(currentSessionId, [...newHistory, { role: 'assistant', content: errorMsg }]);
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
@@ -113,8 +183,8 @@ function App() {
       mediaRecorderRef.current.start();
       setIsRecording(true);
     } catch (err) {
-      console.error("Microphone access denied or error:", err);
-      alert("Please allow microphone access to use the Voice Agent.");
+      console.error("Microphone access error:", err);
+      alert("Please allow microphone permissions to speak with Haqooq AI.");
     }
   };
 
@@ -149,216 +219,454 @@ function App() {
       
       const newHistory = [
         ...messages, 
-        { role: 'user', content: `[Voice Note] ${data.transcription}` },
-        { role: 'assistant', content: data.response }
+        { role: 'user', content: `🎙️ [Voice Consultation] ${data.transcription}` },
+        { role: 'assistant', content: data.response, audio: data.audio }
       ];
       updateSessionMessages(currentSessionId, newHistory);
 
       if (data.audio) {
         const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
-        audio.play();
+        audio.play().catch(e => console.log("Audio autoplay prevented:", e));
       }
     } catch (error) {
-      updateSessionMessages(currentSessionId, [...messages, { role: 'assistant', content: 'Error processing audio. Please try again.' }]);
+      updateSessionMessages(currentSessionId, [...messages, { role: 'assistant', content: '⚠️ Error processing voice query. Please try again.' }]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const copyToClipboard = (text, index) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const playVoiceResponse = (audioBase64) => {
+    if (!audioBase64) return;
+    const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
+    audio.play();
+  };
+
   const downloadTranscript = () => {
     if (messages.length === 0) return;
     
-    let transcriptText = `Haqooq AI - Legal Consultation Transcript\nSession: ${currentSession.title}\n`;
-    transcriptText += "========================================\n\n";
+    let transcriptText = `HAQOOQ AI - OFFICIAL LEGAL CONSULTATION TRANSCRIPT\n`;
+    transcriptText += `Session: ${currentSession.title}\n`;
+    transcriptText += `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
+    transcriptText += `Jurisdiction: Islamic Republic of Pakistan\n`;
+    transcriptText += `==========================================================\n\n`;
     
-    messages.forEach(msg => {
-      const role = msg.role === 'user' ? "Client" : "Legal Advisor";
-      transcriptText += `${role}:\n${msg.content}\n\n`;
+    messages.forEach((msg, idx) => {
+      const role = msg.role === 'user' ? "CITIZEN / CLIENT" : "HAQOOQ AI LEGAL ADVISOR";
+      transcriptText += `[${idx + 1}] ${role}:\n${msg.content}\n\n----------------------------------------------------------\n\n`;
     });
 
+    transcriptText += `Disclaimer: This document is generated for informational guidance based on Pakistani statutory law and does not substitute licensed legal representation in court.\n`;
+
     const element = document.createElement("a");
-    const file = new Blob([transcriptText], {type: 'text/plain'});
+    const file = new Blob([transcriptText], { type: 'text/plain;charset=utf-8' });
     element.href = URL.createObjectURL(file);
-    element.download = `Haqooq_${currentSession.title.replace(/\s+/g, '_')}_Transcript.txt`;
+    element.download = `Haqooq_Consultation_${Date.now()}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
   };
 
   return (
-    <div className="landing-page">
-      {/* Navbar */}
-      <nav className="navbar">
-        <div className="nav-brand">
-          <Scale size={32} className="nav-icon" />
-          <span>Haqooq AI</span>
+    <div className="app-layout">
+      {/* Top Banner Status Bar */}
+      <div className="top-status-bar">
+        <div className="status-container">
+          <div className="status-pill">
+            <span className="pulse-dot"></span>
+            <span>AI Legal Engine Online</span>
+          </div>
+          <div className="status-divider">|</div>
+          <div className="statutes-badge">
+            <ShieldCheck size={14} className="statute-icon" />
+            <span>1,280+ Enacted Pakistani Legal Statutes (PPC, CrPC, PECA 2016, Family Laws)</span>
+          </div>
         </div>
-        <div className="nav-links">
-          <a href="#features">Features</a>
-          <button className="nav-cta" onClick={scrollToWorkspace}>Consult Now</button>
+      </div>
+
+      {/* Main Navbar */}
+      <nav className="navbar">
+        <div className="nav-container">
+          <div className="nav-brand">
+            <div className="brand-icon-wrapper">
+              <Scale size={24} className="brand-icon" />
+            </div>
+            <div className="brand-text">
+              <span className="brand-name">Haqooq AI</span>
+              <span className="brand-tag">Pakistani Legal Advisor</span>
+            </div>
+          </div>
+
+          <div className="nav-actions">
+            <a href="#how-rag-works" className="nav-link">
+              <Cpu size={16} />
+              <span>How RAG Works</span>
+            </a>
+            <a href="#statutes" className="nav-link">
+              <BookOpen size={16} />
+              <span>Acts Covered</span>
+            </a>
+            <button className="nav-cta-btn" onClick={scrollToWorkspace}>
+              <Sparkles size={16} />
+              <span>Consult Now</span>
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* Hero Section */}
       <section className="hero-section">
-        <motion.div 
-          className="hero-content" 
-          initial={{ opacity: 0, y: 30 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.8 }}
-        >
-          <div className="badge">AI-Powered Legal Tech</div>
-          <h1 className="hero-title">Your Personal <br/><span className="text-gradient">Pakistani Legal Assistant</span></h1>
-          <p className="hero-subtitle">Get instant, highly accurate, and 100% confidential legal advice sourced directly from the official Constitution and Penal Code of Pakistan.</p>
-          <button className="hero-btn" onClick={scrollToWorkspace}>
-            Start Free Consultation <ArrowRight size={20} />
-          </button>
-        </motion.div>
-      </section>
+        <div className="hero-container">
+          <motion.div 
+            className="hero-left"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+          >
+            <div className="hero-badge">
+              <Award size={15} />
+              <span>Bilingual Legal Artificial Intelligence</span>
+            </div>
+            <h1 className="hero-heading">
+              Democratizing <span className="gradient-text">Justice & Rights</span> for Every Pakistani.
+            </h1>
+            <p className="hero-subtext">
+              Instant, confidential, and verified legal counsel grounded strictly in the <strong>Constitution of Pakistan</strong>, <strong>Pakistan Penal Code</strong>, <strong>CrPC</strong>, and <strong>PECA Cybercrime Laws</strong>.
+            </p>
 
-      {/* Features Section */}
-      <section id="features" className="features-section">
-        <div className="section-header">
-          <h2>Why Choose Haqooq AI?</h2>
-          <p>We leverage cutting-edge AI to bring justice to your fingertips.</p>
-        </div>
-        <div className="features-grid">
-          <motion.div className="feature-card" whileHover={{ y: -5 }}>
-            <div className="feature-icon"><Globe size={28} /></div>
-            <h3>Urdu Voice Support</h3>
-            <p>Speak naturally in Urdu or English. Haqooq understands your voice and responds accurately in your preferred language.</p>
-          </motion.div>
-          <motion.div className="feature-card" whileHover={{ y: -5 }}>
-            <div className="feature-icon"><Shield size={28} /></div>
-            <h3>Verified Context</h3>
-            <p>Our AI is strictly bound to the Pakistan Penal Code. It does not guess—it provides answers backed by actual laws.</p>
-          </motion.div>
-          <motion.div className="feature-card" whileHover={{ y: -5 }}>
-            <div className="feature-icon"><FileText size={28} /></div>
-            <h3>Instant Transcripts</h3>
-            <p>Automatically build a running case file as you chat, and download your complete consultation transcript anytime.</p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Application Workspace */}
-      <section ref={workspaceRef} className="workspace-section">
-        <div className="section-header">
-          <h2>Legal Consultation Room</h2>
-          <p>Type your query below or tap the microphone to speak securely.</p>
-        </div>
-        
-        <div className="app-container">
-          <div className="workspace">
-            {/* Left Pane: Sessions / Case File */}
-            <div className="case-file-pane">
-              <div className="sidebar-header">
-                <button className="new-chat-btn" onClick={startNewChat}>
-                  <Plus size={18} />
-                  <span>New Consultation</span>
-                </button>
-              </div>
-              
-              <div className="sessions-list">
-                <div className="sessions-label">Recent Consultations</div>
-                {sessions.map(session => (
-                  <div 
-                    key={session.id} 
-                    className={`session-item ${session.id === currentSessionId ? 'active' : ''}`}
-                    onClick={() => setCurrentSessionId(session.id)}
-                  >
-                    <MessageSquare size={16} />
-                    <span className="session-title">{session.title}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pane-footer">
-                <button 
-                  className="download-btn" 
-                  onClick={downloadTranscript}
-                  disabled={messages.length === 0}
-                >
-                  <Download size={18} />
-                  Download Transcript
-                </button>
+            <div className="hero-cta-group">
+              <button className="primary-cta-btn" onClick={scrollToWorkspace}>
+                <span>Start Legal Consultation</span>
+                <ArrowRight size={18} />
+              </button>
+              <div className="trust-indicator">
+                <Shield size={18} className="trust-icon" />
+                <span>100% Free & Confidential</span>
               </div>
             </div>
 
-            {/* Right Pane: Consultation Room */}
-            <div className="chat-container">
-              <div className="messages" ref={messagesContainerRef}>
-                {messages.length === 0 && !isLoading && (
-                   <div className="chat-placeholder">
-                     <div className="placeholder-icon"><Scale size={48} /></div>
-                     <h3>How can I help you today?</h3>
-                     <p>Type your query or use the microphone to speak securely.</p>
-                   </div>
-                )}
-                
-                <AnimatePresence>
-                  {messages.map((msg, idx) => (
-                    <motion.div 
-                      key={idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`message ${msg.role}`}
-                      dir="auto"
-                    >
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {msg.content}
-                      </ReactMarkdown>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                {isLoading && <div className="loading">Haqooq is analyzing your case...</div>}
+            <div className="hero-metrics">
+              <div className="metric-item">
+                <span className="metric-num">5+</span>
+                <span className="metric-label">Enacted Acts</span>
               </div>
+              <div className="metric-divider"></div>
+              <div className="metric-item">
+                <span className="metric-num">3</span>
+                <span className="metric-label">Languages (Urdu/Eng/Roman)</span>
+              </div>
+              <div className="metric-divider"></div>
+              <div className="metric-item">
+                <span className="metric-num">&lt; 1s</span>
+                <span className="metric-label">Sub-Second Retrieval</span>
+              </div>
+            </div>
+          </motion.div>
 
-              <div className="input-area">
-                <form className="input-container" onSubmit={handleSendText}>
-                  <input 
-                    type="text" 
-                    className="text-input" 
-                    placeholder={isRecording ? "Recording... Speak now 🎙️" : "Message Haqooq AI..."} 
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    disabled={isLoading || isRecording}
-                  />
-                  <div className="input-actions">
-                    <button 
-                      type="button"
-                      onClick={toggleRecording} 
-                      className={`mic-btn ${isRecording ? 'recording' : ''}`}
-                      title={isRecording ? "Stop Recording" : "Start Recording"}
-                    >
-                      {isRecording ? <Square size={20} /> : <Mic size={20} />}
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="send-btn" 
-                      disabled={!input.trim() || isLoading || isRecording}
-                    >
-                      <Send size={20} />
-                    </button>
-                  </div>
-                </form>
+          <motion.div 
+            className="hero-right"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+          >
+            <div className="hero-image-card">
+              <img 
+                src="/hero_illustration.jpg" 
+                alt="Haqooq AI Legal Justice Illustration" 
+                className="hero-img"
+              />
+              <div className="image-overlay-badge badge-top-left">
+                <Scale size={16} className="badge-icon" />
+                <span>Fair & Impartial</span>
+              </div>
+              <div className="image-overlay-badge badge-bottom-right">
+                <ShieldCheck size={16} className="badge-icon" />
+                <span>Verified Law Citations</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* How RAG Works Section */}
+      <section id="how-rag-works" className="rag-showcase-section">
+        <div className="section-header">
+          <div className="section-pill">
+            <Cpu size={14} />
+            <span>Architecture & Verification</span>
+          </div>
+          <h2>How Haqooq AI's RAG Pipeline Works</h2>
+          <p>Unlike generic AI models that guess, Haqooq utilizes a strict Retrieval-Augmented Generation pipeline.</p>
+        </div>
+
+        <div className="rag-content-wrapper">
+          <motion.div 
+            className="rag-visual-box"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <img 
+              src="/rag_visual.jpg" 
+              alt="Haqooq AI RAG Knowledge Network" 
+              className="rag-img"
+            />
+          </motion.div>
+
+          <div className="rag-steps-grid">
+            <div className="rag-step-card">
+              <div className="step-number">01</div>
+              <div className="step-content">
+                <h3>Query Understanding & Translation</h3>
+                <p>Translates colloquial Urdu and Roman Urdu queries into structured Pakistani legal search vectors.</p>
+              </div>
+            </div>
+
+            <div className="rag-step-card">
+              <div className="step-number">02</div>
+              <div className="step-content">
+                <h3>ChromaDB Vector Retrieval</h3>
+                <p>Dense similarity search extracts relevant legal clauses from 1,280+ indexed sections of Pakistani Law.</p>
+              </div>
+            </div>
+
+            <div className="rag-step-card">
+              <div className="step-number">03</div>
+              <div className="step-content">
+                <h3>Synthesis & Required Documents</h3>
+                <p>Generates actionable legal advice with step-by-step procedures, evidentiary checklists, and clickable citations.</p>
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Interactive Consultation Workspace */}
+      <section ref={workspaceRef} className="workspace-section">
+        <div className="workspace-header">
+          <div className="section-pill">
+            <MessageSquare size={14} />
+            <span>Interactive Legal Room</span>
+          </div>
+          <h2>Live Consultation Workspace</h2>
+          <p>Type your query or click on a pre-configured legal scenario below.</p>
+        </div>
+
+        {/* Quick Starter Chips */}
+        <div className="starter-chips-container">
+          {STARTER_QUERIES.map((starter, idx) => (
+            <motion.div 
+              key={idx}
+              className="starter-chip"
+              whileHover={{ y: -3, scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleSendText(null, starter.query)}
+            >
+              <div className="chip-icon">{starter.icon}</div>
+              <div className="chip-details">
+                <span className="chip-title">{starter.title}</span>
+                <span className="chip-desc">{starter.desc}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Workspace Main Panel */}
+        <div className="workspace-card">
+          {/* Left Sidebar: Sessions */}
+          <aside className="workspace-sidebar">
+            <div className="sidebar-top">
+              <button className="new-session-btn" onClick={startNewChat}>
+                <Plus size={18} />
+                <span>New Consultation</span>
+              </button>
+            </div>
+
+            <div className="sessions-container">
+              <div className="sessions-header-label">Previous Consultations</div>
+              <div className="sessions-scroll">
+                {sessions.map(session => (
+                  <div 
+                    key={session.id} 
+                    className={`session-card ${session.id === currentSessionId ? 'active' : ''}`}
+                    onClick={() => setCurrentSessionId(session.id)}
+                  >
+                    <MessageSquare size={16} className="session-card-icon" />
+                    <span className="session-card-title">{session.title}</span>
+                    {sessions.length > 1 && (
+                      <button 
+                        className="delete-session-btn"
+                        onClick={(e) => deleteSession(session.id, e)}
+                        title="Delete Consultation"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="sidebar-bottom">
+              <button 
+                className="export-transcript-btn"
+                onClick={downloadTranscript}
+                disabled={messages.length === 0}
+              >
+                <Download size={16} />
+                <span>Export Case Transcript</span>
+              </button>
+            </div>
+          </aside>
+
+          {/* Right Chat Area */}
+          <main className="workspace-chat">
+            <div className="chat-messages-scroll" ref={messagesContainerRef}>
+              {messages.length === 0 && !isLoading && (
+                <div className="chat-empty-state">
+                  <div className="empty-icon-circle">
+                    <Scale size={42} />
+                  </div>
+                  <h3>Welcome to Haqooq AI Legal Consultation</h3>
+                  <p>Describe your legal scenario in English, Roman Urdu, or Urdu. You can also tap the microphone to speak.</p>
+                </div>
+              )}
+
+              <AnimatePresence>
+                {messages.map((msg, idx) => (
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`chat-bubble-wrapper ${msg.role}`}
+                  >
+                    <div className="chat-bubble-avatar">
+                      {msg.role === 'user' ? '👤' : '⚖️'}
+                    </div>
+
+                    <div className="chat-bubble-body">
+                      <div className="chat-bubble-header">
+                        <span className="sender-name">
+                          {msg.role === 'user' ? 'You' : 'Haqooq Legal Advisor'}
+                        </span>
+                        {msg.role === 'assistant' && (
+                          <div className="assistant-tools">
+                            {msg.audio && (
+                              <button 
+                                className="action-icon-btn" 
+                                onClick={() => playVoiceResponse(msg.audio)}
+                                title="Listen to Advice"
+                              >
+                                <Volume2 size={15} />
+                              </button>
+                            )}
+                            <button 
+                              className="action-icon-btn" 
+                              onClick={() => copyToClipboard(msg.content, idx)}
+                              title="Copy Advice"
+                            >
+                              {copiedIndex === idx ? <Check size={15} className="copied-icon" /> : <Copy size={15} />}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="chat-bubble-content" dir="auto">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {isLoading && (
+                <motion.div 
+                  className="chat-bubble-wrapper assistant loading-state"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="chat-bubble-avatar">⚖️</div>
+                  <div className="chat-bubble-body loading-bubble">
+                    <RefreshCw size={18} className="spinner-icon" />
+                    <span>Searching Pakistani Statutes & Generating Legal Advice...</span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Input & Voice Controls */}
+            <div className="chat-input-bar">
+              {isRecording && (
+                <div className="recording-indicator-strip">
+                  <span className="rec-dot"></span>
+                  <span className="rec-text">Listening to your consultation... ({recordingDuration}s)</span>
+                  <div className="waveform-animation">
+                    <span className="wave-bar"></span>
+                    <span className="wave-bar"></span>
+                    <span className="wave-bar"></span>
+                    <span className="wave-bar"></span>
+                    <span className="wave-bar"></span>
+                  </div>
+                </div>
+              )}
+
+              <form className="input-form" onSubmit={handleSendText}>
+                <input 
+                  type="text" 
+                  className="chat-text-input"
+                  placeholder={isRecording ? "Listening... speak in Urdu or English" : "Describe your legal situation (e.g., bike chori, police refusal, WhatsApp scam)..."}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={isLoading || isRecording}
+                />
+
+                <div className="input-btn-group">
+                  <button 
+                    type="button" 
+                    className={`mic-toggle-btn ${isRecording ? 'active-recording' : ''}`}
+                    onClick={toggleRecording}
+                    title={isRecording ? "Stop Recording" : "Voice Consultation"}
+                  >
+                    {isRecording ? <Square size={18} /> : <Mic size={18} />}
+                  </button>
+
+                  <button 
+                    type="submit" 
+                    className="send-query-btn"
+                    disabled={!input.trim() || isLoading || isRecording}
+                    title="Send Query"
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </main>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="footer-content">
+      <footer className="app-footer">
+        <div className="footer-inner">
           <div className="footer-brand">
-            <Scale size={24} />
+            <Scale size={20} />
             <span>Haqooq AI</span>
           </div>
           <p className="footer-disclaimer">
-            <strong>Disclaimer:</strong> Haqooq AI provides general legal information based on standard Pakistani law. It is not formal legal counsel. Please consult a licensed attorney for official legal representation.
+            <strong>Legal Notice:</strong> Haqooq AI is an AI-powered legal awareness agent for the Islamic Republic of Pakistan. It does not replace licensed legal representation in court.
           </p>
-          <p className="footer-copyright">&copy; {new Date().getFullYear()} Haqooq AI. All rights reserved.</p>
+          <div className="footer-copyright">
+            © {new Date().getFullYear()} Haqooq AI. Dedicated to Legal Access in Pakistan 🇵🇰
+          </div>
         </div>
       </footer>
     </div>

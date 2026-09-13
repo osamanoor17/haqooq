@@ -5,11 +5,14 @@ import os
 import asyncio
 import edge_tts
 from groq import Groq
-from backend.legal_advisor import init_rag_chain
+from backend.legal_advisor import init_rag_chain, get_groq_client
 import tempfile
 import base64
 import json
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="Haqooq AI Legal Advisor API")
 
@@ -21,20 +24,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_groq_client = Groq()
 rag_chain = None
+
+def get_rag():
+    global rag_chain
+    if rag_chain is None:
+        rag_chain = init_rag_chain()
+    return rag_chain
 
 @app.on_event("startup")
 async def startup_event():
-    global rag_chain
-    rag_chain = init_rag_chain()
+    get_rag()
 
 class ChatRequest(BaseModel):
     message: str
     history: list
 
 @app.post("/chat/text")
-async def chat_text(request: ChatRequest):
+def chat_text(request: ChatRequest):
     try:
         user_query = request.message
         history = request.history
@@ -44,10 +51,13 @@ async def chat_text(request: ChatRequest):
             role = "User" if msg.get("role") == "user" else "AI"
             formatted_history += f"{role}: {msg.get('content', '')}\n"
             
-        # Instead of streaming, just get the full response for simpler API
-        response = rag_chain.invoke({"question": user_query, "history": formatted_history})
+        print(f"--> Processing text query: {user_query[:60]}...")
+        chain = get_rag()
+        response = chain.invoke({"question": user_query, "history": formatted_history})
+        print(f"<-- Response generated successfully ({len(response)} chars)")
         return {"response": response, "audio": None}
     except Exception as e:
+        print(f"Error in chat_text: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/chat/audio")
@@ -60,10 +70,11 @@ async def chat_audio(audio: UploadFile = File(...), history: str = Form(...)):
             temp_audio.write(await audio.read())
             temp_path = temp_audio.name
             
+        client = get_groq_client()
         # Transcribe with auto-detection
         with open(temp_path, "rb") as f:
             file_bytes = f.read()
-            transcription = _groq_client.audio.transcriptions.create(
+            transcription = client.audio.transcriptions.create(
                 file=(os.path.basename(temp_path), file_bytes),
                 model="whisper-large-v3",
             )
@@ -72,7 +83,7 @@ async def chat_audio(audio: UploadFile = File(...), history: str = Form(...)):
         
         # If Whisper auto-detected Hindi and outputted Devanagari script, force it to Urdu
         if any('\u0900' <= c <= '\u097F' for c in user_query):
-            transcription = _groq_client.audio.transcriptions.create(
+            transcription = client.audio.transcriptions.create(
                 file=(os.path.basename(temp_path), file_bytes),
                 model="whisper-large-v3",
                 language="ur"
@@ -88,7 +99,7 @@ async def chat_audio(audio: UploadFile = File(...), history: str = Form(...)):
         # Generate Response
         # We append a hidden instruction to force Proper Urdu Script for Urdu queries, but allow English for English queries
         audio_instruction = "\n[System: If the user's voice query is in English, reply in English. If the user's voice query is in Urdu or Roman Urdu, you MUST reply in Proper Urdu Script (اردو) so the Urdu TTS engine pronounces it correctly. Do NOT use Roman Urdu in your response.]"
-        response = rag_chain.invoke({"question": user_query + audio_instruction, "history": formatted_history})
+        response = get_rag().invoke({"question": user_query + audio_instruction, "history": formatted_history})
         
         # Clean response for TTS
         tts_text = response

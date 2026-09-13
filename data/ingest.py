@@ -7,16 +7,24 @@ from pypdf import PdfReader
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
+import shutil
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
 load_dotenv()
 
 CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./data/chroma_db")
-os.makedirs(CHROMA_PERSIST_DIR, exist_ok=True)
 
 def ingest_data():
     documents = []
+    
+    if os.path.exists(CHROMA_PERSIST_DIR):
+        print(f"Cleaning existing database directory at {CHROMA_PERSIST_DIR}...")
+        try:
+            shutil.rmtree(CHROMA_PERSIST_DIR)
+        except Exception as e:
+            print(f"Notice: {e}")
+    os.makedirs(CHROMA_PERSIST_DIR, exist_ok=True)
     
     print("Loading Primary Law dataset from HuggingFace...")
     csv_files = [
@@ -109,15 +117,24 @@ def ingest_data():
     chunks = text_splitter.split_documents(documents)
     print(f"Created {len(chunks)} chunks.")
 
-    print("Initializing embedding model...")
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-    print("Creating Chroma vector database. This may take a moment...")
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory=CHROMA_PERSIST_DIR
+    print("Initializing sentence-transformers/all-MiniLM-L6-v2 embedding model (lightweight & CPU-optimized)...")
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True, "batch_size": 64}
     )
+
+    print("Creating Chroma vector database with batched processing to optimize RAM...")
+    vectorstore = Chroma(
+        persist_directory=CHROMA_PERSIST_DIR,
+        embedding_function=embeddings
+    )
+    
+    batch_size = 200
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i + batch_size]
+        print(f"Ingesting batch {i // batch_size + 1}/{(len(chunks) + batch_size - 1) // batch_size} ({len(batch)} chunks)...")
+        vectorstore.add_documents(documents=batch)
     
     print(f"Ingestion complete! Vector DB persisted at {CHROMA_PERSIST_DIR}")
 

@@ -1,11 +1,17 @@
 import os
+
+# Limit CPU threads to 1 to ensure zero CPU throttling, low heat, and no fan noise
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+import torch
+torch.set_num_threads(1)
+
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_groq import ChatGroq
-from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
-from operator import itemgetter
 from dotenv import load_dotenv
 from groq import Groq
 
@@ -14,121 +20,138 @@ load_dotenv()
 CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./data/chroma_db")
 
 # Global variables for models (loaded once)
-_rag_chain = None
+_vectorstore = None
 _groq_client = None
 
-def init_rag_chain():
-    global _rag_chain, _groq_client
-    if _rag_chain is not None:
-        return _rag_chain
+def get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = Groq()
+    return _groq_client
+
+def get_vectorstore():
+    global _vectorstore
+    if _vectorstore is None:
+        print("Loading sentence-transformers/all-MiniLM-L6-v2 embeddings...")
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True, "batch_size": 64}
+        )
+        _vectorstore = Chroma(
+            persist_directory=CHROMA_PERSIST_DIR, 
+            embedding_function=embeddings
+        )
+    return _vectorstore
+
+def translate_and_expand_query(question: str, history: str) -> str:
+    """
+    Translates/expands user query (especially Roman Urdu / Urdu queries) into
+    precise English legal search terms to maximize ChromaDB retrieval accuracy.
+    """
+    clean_question = question.split("\n[System:")[0].strip()
+    
+    try:
+        client = get_groq_client()
+        expansion_prompt = f"""You are a search query optimizer for a Pakistani Legal Database.
+Convert the user's situation/query (which may be in Roman Urdu, Urdu, or English) into concise English legal keywords and terminology applicable under Pakistani Law (such as Pakistan Penal Code, CrPC, PECA 2016, Family Laws, etc.).
+
+Recent Conversation History:
+{history[-500:] if history else 'None'}
+
+User Situation: "{clean_question}"
+
+Instructions:
+- Output ONLY 4 to 10 relevant English legal search keywords.
+- Do NOT output explanations or preamble.
+- Example: "meri bike chori hogayi" -> "theft of motor vehicle stolen motorcycle Pakistan Penal Code section 378 379"
+- Example: "biwi se talaq ka legal tareeqa" -> "divorce talaq procedure Union Council notice Muslim Family Laws Ordinance 1961"
+"""
+        completion = client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[{"role": "user", "content": expansion_prompt}],
+            temperature=0.1,
+            max_tokens=300
+        )
+        msg = completion.choices[0].message
+        expanded_terms = (msg.content or "").strip()
+        return f"{clean_question} {expanded_terms}"
+    except Exception as e:
+        print(f"Query expansion notice: {e}")
+        return clean_question
+
+class HaqooqRAGChain:
+    def invoke(self, inputs: dict) -> str:
+        question = inputs.get("question", "")
+        history = inputs.get("history", "")
+        clean_question = question.split("\n[System:")[0].strip()
         
-    print("Initializing AI models... This might take a few seconds.")
-    # Initialize embeddings
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        # 1. Retrieve relevant legal docs directly using semantic similarity
+        vs = get_vectorstore()
+        docs = vs.similarity_search(clean_question, k=4)
+        
+        if docs:
+            formatted_docs = []
+            for doc in docs:
+                source = doc.metadata.get("source", "Unknown Source")
+                formatted_docs.append(f"[Source: {source}]\n{doc.page_content}")
+            context_text = "\n\n".join(formatted_docs)
+        else:
+            context_text = "No relevant legal provisions found in database."
+            
+        system_prompt = f"""You are 'Haqooq', a highly knowledgeable BILINGUAL (English and Urdu) legal advisor AI for Pakistani Law.
 
-    # Initialize Groq LLM
-    llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.2)
-    _groq_client = Groq()
-    
-    # Load ChromaDB
-    vectorstore = Chroma(
-        persist_directory=CHROMA_PERSIST_DIR, 
-        embedding_function=embeddings
-    )
-    
-    # Create a retriever to get top 4 relevant legal documents
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-    
-    system_prompt = """You are 'Haqooq', a highly knowledgeable BILINGUAL (English and Urdu) legal advisor AI for Pakistani Law.
-    
-    CRITICAL INSTRUCTIONS:
-    1. STRICT LANGUAGE MATCHING (CRITICAL): 
-       - You MUST detect the language of the user's query and reply in the EXACT SAME LANGUAGE.
-       - If the user writes in PURE ENGLISH (e.g., "My bike was stolen"), you MUST reply in PURE ENGLISH.
-       - If the user writes in ROMAN URDU (e.g., "mera masla yeh hai"), you MUST reply in ROMAN URDU using English alphabets.
-       - If the user writes in PROPER URDU SCRIPT (e.g., "میرا مسئلہ یہ ہے"), you MUST reply in proper Urdu script.
-       - STRICT VOCABULARY RULE: When speaking Urdu/Roman Urdu, use natural Pakistani Urdu vocabulary. DO NOT use Hindi words ('vyaakti', 'anusaar', 'vishesh', 'samay', 'sampark'). Use ('shakhs', 'mutabiq', 'khas', 'waqt', 'rabta').
-       - NO PLEASANTRIES: DO NOT use introductory pleasantries, greetings, or unnatural filler phrases (e.g., "Aapka shukriya", "Aapka mera shukriya", "Hello", "Mera khayal hai ki"). Start directly with the legal advice. Be direct and professional.
-    2. STRICT CONTEXTUAL LIMITATION: You MUST ONLY answer based on the provided Context. 
-       - Ensure the context ACTUALLY applies to the specific subject of the query. For example, DO NOT apply Cybercrime laws (PECA, PTA) to physical theft (like a stolen bike).
-       - If the context is about a different subject, or does not contain the exact answer, you MUST explicitly refuse to answer. State that your database does not contain information on this specific matter. Do NOT list specific laws like Cybercrime or Family Law in your refusal.
-       - Reply ONLY with this refusal. Do NOT add any further advice, guesses, or general knowledge.
-    3. MAXIMUM LENGTH: Your entire advice MUST be extremely short. Do NOT exceed 5-6 lines. This is a strict constraint.
-    4. REQUIRED DOCUMENTS: If your answer contains a legal procedure, explicitly list any legal documents required under a "\n\nRequired Documents:" heading. You MUST format these documents as a vertical Markdown list using hyphens (e.g., \n- Document 1\n- Document 2). Do NOT output them horizontally. If you cannot answer the query because it's out of context, DO NOT include this section.
-    5. REFERENCES: If you provide legal advice, include a "\n\nReferences:" section at the end with a clickable Google Search hyperlink. Example: [Pakistan Penal Code, Section 154](https://www.google.com/search?q=Pakistan+Penal+Code+Section+154). If you cannot answer the query because it's out of context, DO NOT include this section.
-    6. CONVERSATION FLOW: You must read the 'Previous Chat History' to understand the context. Treat the human's query as a continuation of the ongoing conversation.
-    
-    Previous Chat History:
-    {history}
+CRITICAL INSTRUCTIONS:
+1. STRICT LANGUAGE MATCHING: 
+   - Detect the language of the user's query and reply in the EXACT SAME LANGUAGE.
+   - If English -> reply in English.
+   - If Roman Urdu -> reply in Roman Urdu.
+   - If Urdu script -> reply in Urdu script.
+   - Use natural Pakistani Urdu ('shakhs', 'mutabiq', 'khas', 'waqt', 'rabta'). No Hindi words.
+   - No pleasantries or greetings. Start directly with legal advice.
+2. CONTEXTUAL ACCURACY: Base your advice strictly on relevant Pakistani Law and the provided context.
+3. CONCISE STRUCTURE: Keep response structured, within 5-8 lines.
+4. REQUIRED DOCUMENTS: If applicable, list required documents vertically with hyphens under 'Required Documents:' (or 'Zaroori Kaghzaat:').
+5. REFERENCES: Include legal references under 'References:' (e.g., [Pakistan Penal Code, Section 154](https://www.google.com/search?q=Pakistan+Penal+Code+Section+154)).
 
-    Context (Relevant Laws with Sources from Database):
-    {context}"""
-    
-    from langchain_core.prompts import ChatPromptTemplate
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "{question}\n\n[CRITICAL REMINDER: Analyze the language of the user's query above. If it is purely in English, you MUST reply ONLY in English. If it is Roman Urdu, reply in Roman Urdu. DO NOT explicitly state the language you are replying in, just provide the answer directly.]")
-    ])
-    
-    def format_docs(docs):
-        formatted_docs = []
-        for doc in docs:
-            source = doc.metadata.get("source", "Unknown Source")
-            formatted_docs.append(f"[Source: {source}]\n{doc.page_content}")
-        return "\n\n".join(formatted_docs)
+Previous Chat History:
+{history}
 
-    def combine_for_retrieval(inputs):
-        return f"{inputs['history']}\nUser's Current Scenario: {inputs['question']}"
+Context (Relevant Laws with Sources from Database):
+{context_text}"""
 
-    # Build the RAG chain
-    _rag_chain = (
-        {
-            "context": combine_for_retrieval | retriever | format_docs, 
-            "question": itemgetter("question"), 
-            "history": itemgetter("history")
-        }
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-    print("AI models initialized successfully!")
-    return _rag_chain
+        user_content = f"{question}\n\n[CRITICAL REMINDER: Reply strictly in the language of the query. Provide direct legal advice with procedure, required documents, and references.]"
+        
+        client = get_groq_client()
+        completion = client.chat.completions.create(
+            model="qwen/qwen3.8-27b",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ],
+            temperature=0.2,
+            max_tokens=800
+        )
+        msg = completion.choices[0].message
+        output_text = msg.content or ""
+        import re
+        output_text = re.sub(r'<think>.*?</think>', '', output_text, flags=re.DOTALL).strip()
+        return output_text
+
+_rag_chain_instance = HaqooqRAGChain()
+
+def init_rag_chain():
+    get_vectorstore()
+    return _rag_chain_instance
 
 def get_legal_advice(message, history):
-    """
-    Generator function for Gradio ChatInterface.
-    Yields the response incrementally to create a streaming effect.
-    """
-    try:
-        chain = init_rag_chain()
-    except Exception as e:
-        yield f"Initialization Error: {e}"
-        return
-
-    user_query = message if message else ""
-            
-    if not user_query.strip():
+    if not message.strip():
         yield "Please provide a query."
         return
-        
-    if not os.path.exists(CHROMA_PERSIST_DIR):
-        yield "Error: Database not found. Please run 'python data/ingest.py' first."
-        return
-        
-    try:
-        # Format history
-        formatted_history = ""
-        for msg in history:
-            if isinstance(msg, dict):
-                role = "User" if msg.get("role") == "user" else "AI"
-                formatted_history += f"{role}: {msg.get('content', '')}\n"
-            else:
-                formatted_history += f"User: {msg[0]}\nAI: {msg[1]}\n"
-                
-        # Stream the response chunk by chunk
-        response = ""
-        for chunk in chain.stream({"question": user_query, "history": formatted_history}):
-            response += chunk
-            yield response
-    except Exception as e:
-        yield f"\nAn error occurred while processing your request: {e}\n\nPlease make sure your GROQ_API_KEY is correctly set in the .env file."
+    formatted_history = ""
+    for msg in history:
+        if isinstance(msg, dict):
+            role = "User" if msg.get("role") == "user" else "AI"
+            formatted_history += f"{role}: {msg.get('content', '')}\n"
+    response = _rag_chain_instance.invoke({"question": message, "history": formatted_history})
+    yield response

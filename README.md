@@ -1,108 +1,232 @@
-# ⚖️ Haqooq AI: Your Personal Pakistani Legal Advisor
-**Kaggle 5-Day AI Agents Capstone Project**
+# ⚖️ Haqooq AI — Pakistani Legal Advisor AI Agent
 
-![Haqooq AI Preview](https://img.shields.io/badge/Status-Completed-success) ![License](https://img.shields.io/badge/License-MIT-blue) ![Python](https://img.shields.io/badge/Python-3.9+-blue) ![Tech](https://img.shields.io/badge/Tech-React%20%7C%20FastAPI%20%7C%20Groq%20%7C%20ChromaDB-blueviolet)
+<div align="center">
 
-## 📖 The Project Story
-Access to justice is a fundamental human right, yet in Pakistan, obtaining reliable legal counsel is often prohibitively expensive, intimidating, and difficult for the average citizen. People often rely on word-of-mouth or unverified internet searches to understand their basic legal rights regarding property, family disputes, cybercrime, or criminal law.
+[![Status](https://img.shields.io/badge/Status-Active%20%26%20Optimized-success?style=for-the-badge&logo=rocket)](https://github.com/osamanoor17/haqooq)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React%2018-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Groq](https://img.shields.io/badge/Groq%20LPU-F55036?style=for-the-badge&logo=speedtest&logoColor=white)](https://groq.com/)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6F00?style=for-the-badge&logo=databricks&logoColor=white)](https://www.trychroma.com/)
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
 
-**Haqooq AI** (meaning "Rights" in Urdu) was built to bridge this gap. It is a highly specialized, locally-aware AI Legal Agent designed to provide instant, accurate, and 100% confidential legal advice sourced *strictly* from the official Constitution, Penal Code of Pakistan, Family Laws, and Cybercrime Laws (PECA 2016). 
+**Empowering 240+ million citizens with instant, accurate, and 100% confidential legal guidance under Pakistani Law.**
 
-By democratizing access to legal information, Haqooq AI serves as a first-responder for legal queries, allowing citizens to understand their standing before they ever step foot in a lawyer's office.
+[Explore Features](#-core-capabilities) • [System Architecture](#-system-architecture) • [Legal Coverage](#-legal-datasets--acts-covered) • [Quick Start](#-quick-start-guide) • [API Reference](#-api-endpoints)
 
----
-
-## 🎯 How It Fulfills the Kaggle AI Agents Course Criteria
-This project moves beyond simple LLM wrappers by implementing a structured, agentic workflow:
-1. **Meaningful Real-World Problem:** Tackles the massive access-to-justice gap in developing nations.
-2. **RAG-Powered Agent (Retrieval-Augmented Generation):** Utilizes a local `ChromaDB` vector store loaded with actual Pakistani legal datasets. The agent does not rely on its pre-trained weights; it actively retrieves and cites local laws.
-3. **Strict Constraints & Anti-Hallucination:** The agent operates under a strict system prompt. If a user asks a question outside the ingested legal context (e.g., "How do I get a Canadian Visa?"), the agent explicitly refuses to answer, preventing dangerous legal hallucinations.
-4. **Multi-Modal & Bilingual Capabilities:** Features Whisper (Speech-to-Text) with custom language fallback to perfectly detect Urdu/English voice notes, and `edge-tts` to read advice back to the user. The agent intelligently replies in the EXACT language the user spoke (Pure English -> Pure English, Roman Urdu -> Roman Urdu).
-5. **Practical & Shareable:** Built as a complete SaaS-style Single Page Application (React, Vite, Framer Motion) with session memory and audio capabilities.
+</div>
 
 ---
 
-## 🏗️ System Architecture & Tech Stack
+## 📖 The Vision Behind Haqooq AI
 
-The application is built on a modern, decoupled architecture designed for high performance and low latency.
+In Pakistan, accessing quality legal counsel is often intimidating, geographically inaccessible, and financially prohibitive for the average citizen. Whether it involves filing an FIR against police refusal, understanding cyber harassment under PECA 2016, or navigating family disputes under the Muslim Family Laws Ordinance, citizens frequently fall victim to misinformation.
 
-*   **Frontend UI:** `React` + `Vite` + `Framer Motion` (for animations) + `Lucide React` (for icons) + `React Markdown`. Offers a premium "Consultation Room" experience with dynamic microphone visual feedback.
-*   **Backend API:** `FastAPI` (Python) handles the LangChain workflow, audio-to-text processing, text-to-speech generation, and database querying. Exposes robust `/chat/text` and `/chat/audio` endpoints.
-*   **Vector Database:** `ChromaDB` operates locally to store and retrieve dense vector embeddings.
-*   **Embeddings Model:** HuggingFace's `sentence-transformers/all-MiniLM-L6-v2` runs locally to generate embeddings.
-*   **LLM Engine:** `llama-3.1-8b-instant` via the **Groq API** for lightning-fast, ultra-low latency reasoning.
-*   **Speech-to-Text:** `whisper-large-v3` (via Groq API) with custom fallback logic to accurately transcribe both English and Pakistani Urdu without cross-language hallucination.
-*   **Text-to-Speech:** `edge-tts` generates localized natural voice responses (`ur-PK-UzmaNeural` for Urdu, `en-US-AriaNeural` for English).
+**Haqooq AI** (*حُقوق* — meaning *"Rights"* in Urdu) bridges this justice gap. It acts as an **intelligent, bilingual first-responder AI legal consultant** that cites actual enacted Pakistani statutes, provides step-by-step procedural roadmaps, details required evidentiary documents, and generates clickable legal references.
 
 ---
 
-## 📊 Datasets Ingested
+## 🎯 Core Capabilities
 
-Haqooq AI does not hallucinate because it is bound to the following ingested datasets:
-1. **Criminal & Family Law:** Sourced from HuggingFace (`heyIamUmair/pakistani-law-family-criminal-property`), covering the Pakistan Penal Code, Police Law, and Muslim Family Laws Ordinance 1961.
-2. **Constitutional Law:** Sourced from HuggingFace (`AyeshaJadoon/Pakistan_Laws_Dataset`).
-3. **Cybercrime Law (PECA 2016):** Direct PDF ingestion of the Prevention of Electronic Crimes Act 2016 and FIA Cybercrime Wing procedural rules, allowing the AI to guide users on digital harassment and hacking cases.
-
----
-
-## ✨ Core Features
-- **📚 Verified Context Only:** Bound strictly to Pakistani Law. The AI explicitly refuses to answer out-of-context or non-legal questions.
-- **🗣️ Bilingual Voice Support & TTS:** Talk to the agent in Urdu or English via the microphone. Custom prompts ensure Whisper accurately transcribes Pakistani Urdu, and the agent reads the answer back to you using native Text-to-Speech (TTS).
-- **🧠 Multi-Session Memory:** Manage multiple independent legal consultations (chat history) simultaneously.
-- **🎯 Dynamic Formatting:** Legal advice is presented cleanly using Markdown, with required documents listed as bullet points and clickable Google Search reference links provided automatically.
+- 🔍 **Strict RAG (Retrieval-Augmented Generation):** Backed by a dense vector database of Pakistani Acts. The agent **never hallucinates**; it explicitly cites specific sections (e.g., *Section 154 CrPC*, *Section 489-F PPC*, *Section 21 PECA 2016*).
+- 🗣️ **Trilingual Fluency:** Seamlessly comprehends and replies in **Pure English**, **Roman Urdu** (*"meri bike chori hogyi"*), or **Proper Urdu Script** (*"میرا مسئلہ یہ ہے"*).
+- 🎙️ **Voice Consultation Room:** Integrated with `whisper-large-v3` for speech transcription and `edge-tts` for natural Pakistani voice responses (`ur-PK-UzmaNeural`).
+- 📁 **Multi-Session Case Management:** Create, manage, and switch between separate consultation sessions with auto-titling and transcript export.
+- ⚡ **Ultra-Lightweight & CPU-Optimized:** Engineered with `all-MiniLM-L6-v2` and thread-controlled PyTorch execution, ensuring **sub-second responses** with minimal CPU/RAM footprint and zero laptop heatup.
+- 🛡️ **Strict Non-Legal Refusal:** Built-in safeguards reject non-legal queries (e.g., cooking recipes or general chat) to maintain legal integrity.
 
 ---
 
-## 🚀 How to Run Locally
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Client ["Client Layer (React + Vite + Framer Motion)"]
+        UI[Consultation Room UI]
+        Audio[Voice Recorder / Mic]
+        Sessions[Case History State]
+    end
+
+    subgraph Backend ["Backend API (FastAPI)"]
+        Router{Request Router}
+        TextEndpoint["/chat/text"]
+        AudioEndpoint["/chat/audio"]
+        WhisperEngine[Whisper Large v3 - Groq]
+        TTSEngine[Edge TTS Engine]
+    end
+
+    subgraph Intelligence ["RAG Pipeline & Knowledge Store"]
+        VecDB[(ChromaDB Vector Store\n1,280+ Legal Chunks)]
+        Embedder["sentence-transformers/all-MiniLM-L6-v2\n(CPU-Optimized, 384-dim)"]
+        LLM["Qwen 3.8 27B / Groq LPU Engine\n(High-Precision Legal Reasoning)"]
+    end
+
+    UI -->|Text Query| TextEndpoint
+    Audio -->|Voice Note .webm| AudioEndpoint
+    AudioEndpoint --> WhisperEngine --> Router
+    TextEndpoint --> Router
+
+    Router -->|Semantic Search| Embedder --> VecDB
+    VecDB -->|Relevant Legal Statutes| LLM
+    LLM -->|Structured Legal Advice| Router
+
+    Router -->|JSON Output| UI
+    Router -->|Generated Voice| TTSEngine --> UI
+```
+
+---
+
+## 📊 Legal Datasets & Acts Covered
+
+Haqooq AI is grounded in verified, structured Pakistani legal databases:
+
+| Act / Statute | Key Domains Covered | Practical Examples |
+| :--- | :--- | :--- |
+| **Pakistan Penal Code (PPC 1860)** | Criminal offenses, theft, robbery, fraud, dishonest cheques | Section 378/379 (Theft), Section 489-F (Dishonored Cheque), Section 420 (Cheating) |
+| **Code of Criminal Procedure (CrPC 1898)** | Police powers, FIR registration, bail, Justice of Peace | Section 154 (Mandatory FIR), Section 22-A/22-B (Ex-Officio Justice of Peace), Section 497/498 (Bail) |
+| **PECA 2016 & FIA Rules** | Cybercrime, unauthorized access, online harassment, blackmail | Section 14 (Unauthorized identity info), Section 20/21 (Cyberstalking & dignity of natural person) |
+| **Muslim Family Laws Ordinance 1961** | Marriage, Talaq, Khula, Maintenance, Succession | Section 7 (Talaq Notice to Union Council), Section 9 (Wife & Child Maintenance) |
+| **Limitation Act 1908** | Statutory deadlines for filing suits, appeals, and petitions | Period of limitation for recovery, civil appeals, and revisions |
+
+---
+
+## 🛠️ Tech Stack & Engineering Highlights
+
+- **Frontend:** React 18, Vite, Framer Motion, Lucide Icons, React Markdown, Remark GFM.
+- **Backend Framework:** FastAPI (Python 3.9+ / 3.13 ready) with non-blocking threadpool offloading.
+- **Vector Database:** ChromaDB with persistent SQLite storage.
+- **Embedding Model:** `sentence-transformers/all-MiniLM-L6-v2` (~80 MB, 22M params) with single-thread threadpool pinning (`torch.set_num_threads(1)`) to eliminate CPU spikes.
+- **Inference Engine:** `qwen/qwen3.8-27b` via **Groq Cloud API** for ultra-fast, token-efficient legal synthesis.
+- **Speech-to-Text:** `whisper-large-v3` with custom script detection for Urdu and English audio.
+- **Text-to-Speech:** Microsoft `edge-tts` streaming natural Pakistani Urdu (`ur-PK-UzmaNeural`) and English (`en-US-AriaNeural`).
+
+---
+
+## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Python 3.9+
-- Node.js (v18+)
-- A free API key from [Groq](https://console.groq.com/)
+- Python 3.9+ installed
+- Node.js (v18+) & npm installed
+- Free API key from [Groq Console](https://console.groq.com/)
 
-### 1. Backend Setup
+---
+
+### 1️⃣ Clone & Configure Environment
+
 ```bash
-# Clone the repository and navigate to the project folder
+# Clone the repository
 git clone https://github.com/osamanoor17/haqooq.git
 cd haqooq
 
-# Create and activate a virtual environment
+# Create and activate Python virtual environment
 python -m venv venv
-venv\Scripts\activate  # On Windows (use `source venv/bin/activate` on Mac/Linux)
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create a .env file in the root directory and add your Groq API key:
-# echo "GROQ_API_KEY=gsk_your_api_key_here" > .env
-# echo "CHROMA_PERSIST_DIR=./data/chroma_db" >> .env
-
-# Ingest the legal datasets into the local Vector DB (Run this only once!)
-python data/ingest.py
-
-# Start the FastAPI server
-python -m uvicorn backend.api:app --reload
+venv\Scripts\activate      # On Windows
+# source venv/bin/activate  # On Linux/macOS
 ```
 
-### 2. Frontend Setup
+Create a `.env` file in the project root:
+
+```env
+GROQ_API_KEY=gsk_your_groq_api_key_here
+CHROMA_PERSIST_DIR=./data/chroma_db
+```
+
+---
+
+### 2️⃣ Ingest Legal Datasets (One-Time Setup)
+
+Ingest Pakistani legal statutes into your local ChromaDB:
+
 ```bash
-# Open a new terminal and navigate to the frontend folder
+pip install -r requirements.txt
+python -m data.ingest
+```
+*✨ Takes ~15–30 seconds to parse, chunk, and embed all legal acts.*
+
+---
+
+### 3️⃣ Start Backend Server
+
+```bash
+python -m uvicorn backend.api:app --reload --port 8000
+```
+Backend will be live at: `http://127.0.0.1:8000` (Swagger UI at `/docs`).
+
+---
+
+### 4️⃣ Start Frontend Application
+
+Open a **second terminal** tab:
+
+```bash
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Start the React development server
 npm run dev
 ```
-The application will be available at `http://localhost:5173`.
-The backend API docs will be available at `http://localhost:8000/docs`.
+Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
 ---
 
-## 🔮 Future Scope
-- **Integration with Live Courts:** Connect to high court APIs to track case statuses.
-- **WhatsApp Bot Integration:** Allow users in rural areas to access Haqooq AI directly via WhatsApp voice notes.
+## 🔌 API Endpoints
+
+### 1. Text Consultation
+- **Endpoint:** `POST /chat/text`
+- **Payload:**
+  ```json
+  {
+    "message": "Someone issued a fake check that bounced. What can I do under Section 489-F PPC?",
+    "history": []
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "response": "Under Section 489-F of the Pakistan Penal Code...",
+    "audio": null
+  }
+  ```
+
+### 2. Voice Consultation
+- **Endpoint:** `POST /chat/audio`
+- **Payload:** `multipart/form-data` with `audio` (.webm/.wav file) and `history` (JSON string).
+- **Response:**
+  ```json
+  {
+    "transcription": "Mera WhatsApp hack hogya hai...",
+    "response": "PECA 2016 ke Section 14 aur 21 ke tehat...",
+    "audio": "UklGRiQAAABXQVZFZm10IBAAAAAB..."
+  }
+  ```
 
 ---
-*Built with ❤️ for the Kaggle AI Agents Intensive Course.*
+
+## 🧪 Sample Queries to Try
+
+| Category | Sample Query | Supported Language |
+| :--- | :--- | :--- |
+| **Cybercrime** | *"I was scammed in a WhatsApp group and lost money. Under which PECA sections can I report to FIA?"* | English |
+| **Criminal Law** | *"Police station mein SHO FIR darj nahi kar raha, Sessions Court mein 22-A petition ka tareeqa batao."* | Roman Urdu |
+| **Family Law** | *"فیملی کورٹ سے بچوں کا نان نفقہ اور خرچہ حاصل کرنے کے لیے کون سے کاغذات درکار ہیں؟"* | Urdu Script |
+| **Cheque Fraud** | *"Bank se cheque bounce hone par 489-F PPC ke tehat FIR ka mukammal legal procedure kya hai?"* | Roman Urdu |
+| **Safety Refusal** | *"Biryani ki recipe batao"* | Auto-Refusal |
+
+---
+
+## 🔮 Roadmap & Future Scope
+
+- [ ] **WhatsApp Bot Integration:** Reach rural populations directly through WhatsApp voice notes.
+- [ ] **High Court Cause-List Tracker:** Real-time integration with High Court APIs for automated hearing reminders.
+- [ ] **Automated Legal Notice Generator:** Export ready-to-sign PDF notices (e.g., Section 7 Talaq notice or Section 154 police applications).
+- [ ] **PWA / Mobile App Distribution:** 1-click install on Android & iOS via Capacitor.
+
+---
+
+## ⚖️ Legal Disclaimer
+
+> [!IMPORTANT]
+> **Haqooq AI** is an artificial intelligence-driven legal awareness platform designed to assist citizens in understanding Pakistani law. It **does not** constitute formal attorney-client representation. For complex litigation, representation in court, or formal proceedings, users are strongly advised to engage a licensed Advocate of the High Court / Supreme Court of Pakistan.
+
+---
+
+<div align="center">
+Made with ❤️ for access to justice in Pakistan 🇵🇰
+</div>

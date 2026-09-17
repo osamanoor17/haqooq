@@ -1411,6 +1411,17 @@
   }
 }
 
+@media (max-width: 560px) {
+  .hero-card-badges-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hero-feature-badge {
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .hero-heading {
     font-size: 1.8rem;
@@ -1419,10 +1430,5 @@
   .hero-metrics {
     grid-template-columns: 1fr;
     gap: 10px;
-  }
-
-  .image-overlay-badge {
-    padding: 6px 12px;
-    font-size: 0.75rem;
   }
 }

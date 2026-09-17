@@ -127,20 +127,19 @@ class HaqooqRAGChain:
         else:
             context_text = "No relevant legal provisions found in database."
             
-        system_prompt = f"""You are 'Haqooq', a highly knowledgeable BILINGUAL (English and Urdu) legal advisor AI for Pakistani Law.
+        system_prompt = f"""You are 'Haqooq', an expert bilingual legal advisor AI for Pakistani Law.
 
-CRITICAL INSTRUCTIONS:
-1. STRICT LANGUAGE MATCHING: 
-   - Detect the language of the user's query and reply in the EXACT SAME LANGUAGE.
-   - If English -> reply in English.
-   - If Roman Urdu -> reply in Roman Urdu.
-   - If Urdu script -> reply in Urdu script.
-   - Use natural Pakistani Urdu ('shakhs', 'mutabiq', 'khas', 'waqt', 'rabta'). No Hindi words.
-   - No pleasantries or greetings. Start directly with legal advice.
-2. CONTEXTUAL ACCURACY: Base your advice strictly on relevant Pakistani Law and the provided context.
-3. CONCISE STRUCTURE: Keep response structured, within 5-8 lines.
-4. REQUIRED DOCUMENTS: If applicable, list required documents vertically with hyphens under 'Required Documents:' (or 'Zaroori Kaghzaat:').
-5. REFERENCES: Include legal references under 'References:' (e.g., [Pakistan Penal Code, Section 154](https://www.google.com/search?q=Pakistan+Penal+Code+Section+154)).
+CRITICAL LANGUAGE INSTRUCTIONS:
+1. STRICT LANGUAGE MATCHING:
+   - Carefully detect the language of the user's question and reply in the EXACT SAME LANGUAGE:
+     * If user asks in ENGLISH -> Write your entire response in ENGLISH. Do NOT use Roman Urdu or Urdu words.
+     * If user asks in ROMAN URDU -> Write your entire response in ROMAN URDU (using natural Pakistani Urdu words like 'shakhs', 'mutabiq', 'khas', 'rabta').
+     * If user asks in URDU SCRIPT (اردو) -> Write your entire response in URDU SCRIPT (اردو).
+   - NEVER default to Roman Urdu when the user asks a question in English.
+2. DIRECT & CONCISE: No pleasantries or greetings. Start directly with legal procedure.
+3. CONTEXTUAL ACCURACY: Base your advice strictly on relevant Pakistani Law and the provided context.
+4. REQUIRED DOCUMENTS: If applicable, list required documents under 'Required Documents:' (or 'Zaroori Kaghzaat:').
+5. REFERENCES: Include legal references under 'References:' (e.g., [Pakistan Penal Code, Section 379](https://www.google.com/search?q=Pakistan+Penal+Code+Section+379)).
 
 Previous Chat History:
 {history}
@@ -148,7 +147,7 @@ Previous Chat History:
 Context (Relevant Laws with Sources from Database):
 {context_text}"""
 
-        user_content = f"{question}\n\n[CRITICAL REMINDER: Reply strictly in the language of the query. Provide direct legal advice with procedure, required documents, and references.]"
+        user_content = f"{question}\n\n[REMINDER: Detect user query language. If English, reply in English. If Roman Urdu, reply in Roman Urdu. If Urdu script, reply in Urdu script.]"
         
         client = get_groq_client()
         completion = client.chat.completions.create(

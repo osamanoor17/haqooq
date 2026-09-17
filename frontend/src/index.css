@@ -4,43 +4,76 @@
   --font-main: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
   --font-urdu: 'Noto Nastaliq Urdu', serif;
   
-  /* Modern Light Mode Palette */
-  --bg-main: #f8fafc;
+  /* High-Class AI RAG Light Theme (Pristine, Spacious & Modern) */
+  --bg-main: #fafafa;
   --bg-card: #ffffff;
-  --bg-card-subtle: #f1f5f9;
-  --bg-glass: rgba(255, 255, 255, 0.88);
+  --bg-card-solid: #ffffff;
+  --bg-card-subtle: #f8fafc;
+  --bg-glass: rgba(255, 255, 255, 0.94);
   
   --primary: #059669;        /* Emerald Justice */
   --primary-hover: #047857;
-  --primary-light: #ecfdf5;
-  --primary-border: #a7f3d0;
+  --primary-light: #f0fdf4;
+  --primary-border: #bbf7d0;
+  --primary-glow: 0 4px 20px rgba(5, 150, 105, 0.14);
   
-  --navy: #0f172a;           /* Deep Trust Slate */
+  --navy: #0f172a;           /* Slate 900 */
   --navy-light: #1e293b;
   --blue-accent: #2563eb;
   --blue-light: #eff6ff;
   
   --gold: #d97706;           /* Statutory Gold */
   --gold-light: #fffbeb;
-  --gold-border: #fde68a;
+  --gold-border: #fef08a;
   
   --text-main: #0f172a;      /* Slate 900 */
-  --text-muted: #64748b;     /* Slate 500 */
+  --text-muted: #475569;     /* Slate 600 */
   --text-light: #94a3b8;     /* Slate 400 */
   
-  --border-light: #e2e8f0;   /* Slate 200 */
+  --border-light: #eaecf0;   /* Ultra-fine Border */
+  --border-subtle: #f1f5f9;
   --border-focus: #10b981;
   
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 10px 25px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 20px 35px -5px rgba(0, 0, 0, 0.09), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
-  --shadow-emerald: 0 10px 25px -3px rgba(16, 185, 129, 0.15);
+  --shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.04);
+  --shadow-sm: 0 2px 8px 0 rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 12px 28px -4px rgba(16, 24, 40, 0.08), 0 4px 8px -2px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.1);
+  --shadow-emerald: 0 8px 24px -4px rgba(5, 150, 105, 0.2);
   
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-full: 9999px;
+}
+
+[data-theme="dark"] {
+  --bg-main: #090d16;
+  --bg-card: rgba(15, 23, 42, 0.8);
+  --bg-card-solid: #0f172a;
+  --bg-card-subtle: #1e293b;
+  --bg-glass: rgba(15, 23, 42, 0.88);
+  
+  --primary: #10b981;
+  --primary-hover: #059669;
+  --primary-light: rgba(16, 185, 129, 0.12);
+  --primary-border: rgba(16, 185, 129, 0.3);
+  --primary-glow: 0 0 25px rgba(16, 185, 129, 0.25);
+  
+  --navy: #f8fafc;
+  --navy-light: #cbd5e1;
+  --blue-accent: #3b82f6;
+  --blue-light: rgba(59, 130, 246, 0.12);
+  
+  --gold: #f59e0b;
+  --gold-light: rgba(245, 158, 11, 0.12);
+  --gold-border: rgba(245, 158, 11, 0.35);
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+  
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-focus: #10b981;
 }
 
 * {
@@ -63,9 +96,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-image: 
-    radial-gradient(at 10% 10%, rgba(16, 185, 129, 0.04) 0px, transparent 40%),
-    radial-gradient(at 90% 10%, rgba(37, 99, 235, 0.04) 0px, transparent 40%),
-    radial-gradient(at 50% 90%, rgba(217, 119, 6, 0.03) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(5, 150, 105, 0.03) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(37, 99, 235, 0.03) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(217, 119, 6, 0.02) 0px, transparent 50%);
   background-attachment: fixed;
 }
 
@@ -78,8 +111,29 @@ body {
 button {
   font-family: inherit;
   cursor: pointer;
+  border: none;
+  outline: none;
 }
 
 input, textarea {
   font-family: inherit;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }

@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   Mic, Square, Send, Scale, FileText, Download, Shield, Globe, 
   ArrowRight, Plus, MessageSquare, Copy, Check, Sparkles, BookOpen, 
-  Cpu, Award, ExternalLink, RefreshCw, Trash2, Volume2, ShieldCheck, HelpCircle
+  Cpu, Award, ExternalLink, RefreshCw, Trash2, Volume2, ShieldCheck, HelpCircle,
+  Sun, Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -35,6 +36,39 @@ const STARTER_QUERIES = [
     title: "Dishonored Cheque",
     desc: "Section 489-F PPC",
     query: "Mujhe kisi shakhs ne karobar ke silsilay mein cheque diya tha jo bank se bounce ho gaya. Pakistan Penal Code ke Section 489-F ke mutabiq legal procedure kya hai?"
+  }
+];
+
+const ENACTED_ACTS = [
+  {
+    icon: "⚖️",
+    title: "Pakistan Penal Code (PPC 1860)",
+    statute: "Act XLV of 1860",
+    desc: "Primary criminal law of Pakistan covering offenses against person, property, fraud (415), theft (378), and dishonored cheques (489-F)."
+  },
+  {
+    icon: "🚓",
+    title: "Code of Criminal Procedure (CrPC 1898)",
+    statute: "Act V of 1898",
+    desc: "Regulates criminal trials, FIR registration (Section 154), Justice of Peace petitions (Section 22-A/22-B), and bail procedures."
+  },
+  {
+    icon: "🛡️",
+    title: "Prevention of Electronic Crimes Act",
+    statute: "PECA 2016",
+    desc: "Governs cybercrimes, online harassment (13/14), identity theft, financial scams (16), and FIA Cybercrime Wing procedure."
+  },
+  {
+    icon: "📜",
+    title: "Muslim Family Laws Ordinance",
+    statute: "MFLO 1961",
+    desc: "Regulates marriage registration, Khula, Talaq notices to Union Council, child custody (Hizanat), and spousal maintenance."
+  },
+  {
+    icon: "🏠",
+    title: "Transfer of Property Act",
+    statute: "Act IV of 1882",
+    desc: "Legal frameworks for property sale, lease agreements, tenant eviction notices, and land ownership rights."
   }
 ];
 
@@ -77,6 +111,20 @@ function App() {
       localStorage.setItem('haqooq_current_session_id', String(currentSessionId));
     } catch (e) {}
   }, [currentSessionId]);
+
+  // Theme state (light / dark)
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('haqooq_theme') || 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('haqooq_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -344,6 +392,13 @@ function App() {
               <BookOpen size={16} />
               <span>Acts Covered</span>
             </a>
+            <button 
+              className="theme-toggle-btn" 
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <button className="nav-cta-btn" onClick={scrollToWorkspace}>
               <Sparkles size={16} />
               <span>Consult Now</span>
@@ -464,8 +519,8 @@ function App() {
             <div className="rag-step-card">
               <div className="step-number">02</div>
               <div className="step-content">
-                <h3>ChromaDB Vector Retrieval</h3>
-                <p>Dense similarity search extracts relevant legal clauses from 1,280+ indexed sections of Pakistani Law.</p>
+                <h3>Pinecone Cloud Vector Retrieval</h3>
+                <p>Dense similarity search extracts relevant legal clauses from 2,800+ indexed chunks of Pakistani Law.</p>
               </div>
             </div>
 
@@ -477,6 +532,38 @@ function App() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Enacted Acts Covered Section */}
+      <section id="statutes" className="statutes-section">
+        <div className="section-header">
+          <div className="section-pill">
+            <BookOpen size={14} />
+            <span>Statutory Coverage</span>
+          </div>
+          <h2>Acts & Laws Covered in Database</h2>
+          <p>Grounding every AI advice strictly in enacted Pakistani legislation and statutory codes.</p>
+        </div>
+
+        <div className="statutes-grid">
+          {ENACTED_ACTS.map((act, idx) => (
+            <motion.div 
+              key={idx}
+              className="statute-card"
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: idx * 0.08 }}
+            >
+              <div className="statute-card-top">
+                <span className="statute-card-icon">{act.icon}</span>
+                <span className="statute-badge">{act.statute}</span>
+              </div>
+              <h3>{act.title}</h3>
+              <p>{act.desc}</p>
+            </motion.div>
+          ))}
         </div>
       </section>
 

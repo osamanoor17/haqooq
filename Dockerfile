@@ -1,16 +1,20 @@
-FROM python:3.13-slim AS base
+FROM python:3.11-slim
 
 WORKDIR /app
+
+# Prevent Python from writing pyc files to disk and buffering stdout
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the whole project into the image
+# Copy backend and application code
 COPY . /app
 
-# Expose Gradio UI port (default 7862)
-EXPOSE 7862
+# Expose FastAPI port
+EXPOSE 8000
 
-# Entrypoint runs Gradio UI
-CMD ["python", "ui/app.py", "--share=False"]
+# Start FastAPI production server with uvicorn
+CMD ["uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './App.css';
 
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const STARTER_QUERIES = [
   {
@@ -40,10 +40,43 @@ const STARTER_QUERIES = [
 
 function App() {
   // Sessions State
-  const [sessions, setSessions] = useState([
-    { id: Date.now(), title: 'New Legal Consultation', messages: [] }
-  ]);
-  const [currentSessionId, setCurrentSessionId] = useState(sessions[0].id);
+  // Sessions State with localStorage persistence
+  const [sessions, setSessions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('haqooq_legal_sessions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error("Failed to load sessions from localStorage", e);
+    }
+    return [{ id: Date.now(), title: 'New Legal Consultation', messages: [] }];
+  });
+
+  const [currentSessionId, setCurrentSessionId] = useState(() => {
+    try {
+      const savedId = localStorage.getItem('haqooq_current_session_id');
+      if (savedId && sessions.some(s => s.id === Number(savedId))) {
+        return Number(savedId);
+      }
+    } catch (e) {}
+    return sessions[0]?.id || Date.now();
+  });
+
+  // Sync sessions to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('haqooq_legal_sessions', JSON.stringify(sessions));
+    } catch (e) {}
+  }, [sessions]);
+
+  // Sync currentSessionId to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('haqooq_current_session_id', String(currentSessionId));
+    } catch (e) {}
+  }, [currentSessionId]);
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -57,8 +90,8 @@ function App() {
   const recordingTimerRef = useRef(null);
   const workspaceRef = useRef(null);
 
-  const currentSession = sessions.find(s => s.id === currentSessionId) || sessions[0];
-  const messages = currentSession.messages;
+  const currentSession = sessions.find(s => s.id === currentSessionId) || sessions[0] || { id: Date.now(), title: 'New Legal Consultation', messages: [] };
+  const messages = currentSession ? currentSession.messages : [];
 
   useEffect(() => {
     if (messagesContainerRef.current) {

@@ -1,25 +1,50 @@
 import os
-
-# Limit CPU threads to 1 to ensure zero CPU throttling, low heat, and no fan noise
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-
-import torch
-torch.set_num_threads(1)
-
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+import re
 from dotenv import load_dotenv
 from groq import Groq
+from pinecone import Pinecone
+from langchain_pinecone import PineconeVectorStore
 
 load_dotenv()
 
-CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./data/chroma_db")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "haqooq-legal-db")
 
-# Global variables for models (loaded once)
+class PineconeCloudEmbeddings:
+    """
+    100% Cloud-based embeddings using Pinecone Inference API.
+    Zero local CPU/GPU/RAM load on your laptop.
+    """
+    def __init__(self, pinecone_api_key: str, model: str = "multilingual-e5-large"):
+        self.pc = Pinecone(api_key=pinecone_api_key)
+        self.model = model
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        all_embeddings = []
+        batch_size = 96
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            batch = [t if t.strip() else " " for t in batch]
+            res = self.pc.inference.embed(
+                model=self.model,
+                inputs=batch,
+                parameters={"input_type": "passage"}
+            )
+            all_embeddings.extend([item["values"] for item in res])
+        return all_embeddings
+
+    def embed_query(self, text: str) -> list[float]:
+        clean_text = text if text.strip() else " "
+        res = self.pc.inference.embed(
+            model=self.model,
+            inputs=[clean_text],
+            parameters={"input_type": "query"}
+        )
+        return res[0]["values"]
+
+# Global variables for model instances
 _vectorstore = None
 _groq_client = None
 
@@ -32,22 +57,22 @@ def get_groq_client():
 def get_vectorstore():
     global _vectorstore
     if _vectorstore is None:
-        print("Loading sentence-transformers/all-MiniLM-L6-v2 embeddings...")
-        embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2",
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True, "batch_size": 64}
-        )
-        _vectorstore = Chroma(
-            persist_directory=CHROMA_PERSIST_DIR, 
-            embedding_function=embeddings
+        if not PINECONE_API_KEY:
+            raise ValueError("PINECONE_API_KEY is not configured in .env")
+        
+        print("Connecting to Pinecone Cloud Vector Store...")
+        embeddings = PineconeCloudEmbeddings(pinecone_api_key=PINECONE_API_KEY)
+        _vectorstore = PineconeVectorStore(
+            index_name=PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            pinecone_api_key=PINECONE_API_KEY
         )
     return _vectorstore
 
 def translate_and_expand_query(question: str, history: str) -> str:
     """
     Translates/expands user query (especially Roman Urdu / Urdu queries) into
-    precise English legal search terms to maximize ChromaDB retrieval accuracy.
+    precise English legal search terms to maximize retrieval accuracy.
     """
     clean_question = question.split("\n[System:")[0].strip()
     
@@ -86,9 +111,12 @@ class HaqooqRAGChain:
         history = inputs.get("history", "")
         clean_question = question.split("\n[System:")[0].strip()
         
-        # 1. Retrieve relevant legal docs directly using semantic similarity
+        # 1. Expand query for higher recall
+        expanded_query = translate_and_expand_query(clean_question, history)
+        
+        # 2. Retrieve relevant legal docs directly from Pinecone Cloud
         vs = get_vectorstore()
-        docs = vs.similarity_search(clean_question, k=4)
+        docs = vs.similarity_search(expanded_query, k=5)
         
         if docs:
             formatted_docs = []
@@ -134,7 +162,6 @@ Context (Relevant Laws with Sources from Database):
         )
         msg = completion.choices[0].message
         output_text = msg.content or ""
-        import re
         output_text = re.sub(r'<think>.*?</think>', '', output_text, flags=re.DOTALL).strip()
         return output_text
 

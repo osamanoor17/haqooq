@@ -1196,49 +1196,228 @@
 }
 
 /* ---------------- Responsive Styles ---------------- */
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .hero-container {
     grid-template-columns: 1fr;
-    text-align: center;
+    gap: 32px;
+  }
+  
+  .hero-heading {
+    font-size: 2.6rem;
   }
   
   .hero-subtext {
     max-width: 100%;
   }
-  
-  .hero-cta-group {
-    justify-content: center;
-  }
-  
-  .hero-metrics {
-    margin: 0 auto;
-  }
-  
+
   .rag-content-wrapper {
     grid-template-columns: 1fr;
+    gap: 32px;
   }
-  
+
   .workspace-card {
-    grid-template-columns: 1fr;
-    height: auto;
-    min-height: 600px;
-  }
-  
-  .workspace-sidebar {
-    height: 180px;
+    grid-template-columns: 240px 1fr;
+    height: 70vh;
   }
 }
 
-@media (max-width: 640px) {
-  .hero-heading {
-    font-size: 2.2rem;
+@media (max-width: 860px) {
+  .top-status-bar {
+    padding: 6px 12px;
+    font-size: 0.78rem;
   }
-  
+
+  .status-container {
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .status-divider {
+    display: none;
+  }
+
+  .navbar {
+    padding: 10px 16px;
+  }
+
+  .nav-container {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .brand-name {
+    font-size: 1.1rem;
+  }
+
+  .nav-actions {
+    gap: 10px;
+  }
+
+  .nav-link span {
+    display: none;
+  }
+
+  .nav-cta-btn {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+  }
+
+  .hero-section {
+    padding: 30px 16px 25px;
+  }
+
+  .hero-heading {
+    font-size: 2.1rem;
+    line-height: 1.2;
+  }
+
+  .hero-subtext {
+    font-size: 0.98rem;
+    margin-bottom: 24px;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .primary-cta-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 20px;
+  }
+
+  .trust-indicator {
+    justify-content: center;
+  }
+
+  .hero-metrics {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .metric-divider {
+    display: none;
+  }
+
+  .metric-num {
+    font-size: 1.35rem;
+  }
+
+  .metric-label {
+    font-size: 0.72rem;
+  }
+
+  .rag-showcase-section, .statutes-section, .workspace-section {
+    padding: 35px 16px;
+  }
+
+  .section-header h2, .workspace-header h2 {
+    font-size: 1.75rem;
+  }
+
   .starter-chips-container {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
-  
+
+  .starter-chip {
+    padding: 14px 16px;
+  }
+
+  .workspace-card {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 550px;
+    border-radius: var(--radius-md);
+  }
+
+  .workspace-sidebar {
+    height: auto;
+    max-height: 180px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    padding: 14px;
+  }
+
+  .sessions-container {
+    margin-top: 10px;
+  }
+
+  .sessions-scroll {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+
+  .session-card {
+    flex-shrink: 0;
+    max-width: 180px;
+  }
+
+  .sidebar-bottom {
+    display: none;
+  }
+
+  .workspace-chat {
+    min-height: 480px;
+  }
+
+  .chat-messages-scroll {
+    padding: 16px 14px;
+    gap: 16px;
+  }
+
   .chat-bubble-wrapper {
     max-width: 95%;
+  }
+
+  .chat-bubble-body {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+  }
+
+  .chat-input-bar {
+    padding: 12px 14px;
+  }
+
+  .input-form {
+    padding: 4px 6px 4px 14px;
+  }
+
+  .chat-text-input {
+    font-size: 0.88rem;
+  }
+
+  .mic-toggle-btn, .send-query-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .app-footer {
+    padding: 24px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-heading {
+    font-size: 1.8rem;
+  }
+
+  .hero-metrics {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .image-overlay-badge {
+    padding: 6px 12px;
+    font-size: 0.75rem;
   }
 }

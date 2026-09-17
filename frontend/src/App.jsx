@@ -622,15 +622,13 @@ function App() {
                   >
                     <MessageSquare size={16} className="session-card-icon" />
                     <span className="session-card-title">{session.title}</span>
-                    {sessions.length > 1 && (
-                      <button 
-                        className="delete-session-btn"
-                        onClick={(e) => deleteSession(session.id, e)}
-                        title="Delete Consultation"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    )}
+                    <button 
+                      className="delete-session-btn"
+                      onClick={(e) => deleteSession(session.id, e)}
+                      title="Delete Consultation"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -650,6 +648,22 @@ function App() {
 
           {/* Right Chat Area */}
           <main className="workspace-chat">
+            {messages.length > 0 && (
+              <div className="workspace-chat-header">
+                <div className="chat-header-info">
+                  <Scale size={18} className="chat-header-icon" />
+                  <span className="chat-header-title">{sessions.find(s => s.id === currentSessionId)?.title || 'Legal Consultation'}</span>
+                </div>
+                <button 
+                  className="clear-chat-btn"
+                  onClick={(e) => deleteSession(currentSessionId, e)}
+                  title="Clear or delete this chat session"
+                >
+                  <Trash2 size={15} />
+                  <span>Clear Chat</span>
+                </button>
+              </div>
+            )}
             <div className="chat-messages-scroll" ref={messagesContainerRef}>
               {messages.length === 0 && !isLoading && (
                 <div className="chat-empty-state">

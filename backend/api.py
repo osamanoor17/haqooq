@@ -16,9 +16,13 @@ load_dotenv()
 
 app = FastAPI(title="Haqooq AI Legal Advisor API")
 
+# Configure CORS: Restrict origins in production via ALLOWED_ORIGINS env var
+raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
+allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For dev only
+    allow_origins=allowed_origins if allowed_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,6 +35,11 @@ def get_rag():
     if rag_chain is None:
         rag_chain = init_rag_chain()
     return rag_chain
+
+@app.get("/")
+@app.head("/")
+def health_check():
+    return {"status": "online", "service": "Haqooq AI Legal Advisor API"}
 
 @app.on_event("startup")
 async def startup_event():

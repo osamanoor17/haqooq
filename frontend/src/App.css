@@ -335,31 +335,35 @@
   object-fit: cover;
 }
 
-.image-overlay-badge {
-  position: absolute;
+.hero-card-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.hero-feature-badge {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
+  background: var(--bg-card-solid);
   border: 1px solid var(--border-light);
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: var(--radius-full);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: var(--text-main);
   box-shadow: var(--shadow-sm);
+  flex: 1;
+  justify-content: center;
+  transition: all 0.3s ease;
 }
 
-.badge-top-left {
-  top: 16px;
-  left: 16px;
-}
-
-.badge-bottom-right {
-  bottom: 8px;
-  right: 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+.hero-feature-badge:hover {
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-emerald);
+  transform: translateY(-2px);
 }
 
 .badge-icon {

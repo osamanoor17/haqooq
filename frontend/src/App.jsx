@@ -468,11 +468,14 @@ function App() {
                 alt="Haqooq AI Legal Justice Illustration" 
                 className="hero-img"
               />
-              <div className="image-overlay-badge badge-top-left">
+            </div>
+
+            <div className="hero-card-badges-row">
+              <div className="hero-feature-badge">
                 <Scale size={16} className="badge-icon" />
                 <span>Fair & Impartial</span>
               </div>
-              <div className="image-overlay-badge badge-bottom-right">
+              <div className="hero-feature-badge">
                 <ShieldCheck size={16} className="badge-icon" />
                 <span>Verified Law Citations</span>
               </div>

@@ -2,16 +2,16 @@
 
 <div align="center">
 
-[![Status](https://img.shields.io/badge/Status-Active%20%26%20Optimized-success?style=for-the-badge&logo=rocket)](https://github.com/osamanoor17/haqooq)
+[![Status](https://img.shields.io/badge/Status-Active%20%26%20Cloud%20Optimized-success?style=for-the-badge&logo=rocket)](https://github.com/osamanoor17/haqooq)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React%2018-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Pinecone](https://img.shields.io/badge/Pinecone%20Cloud-000000?style=for-the-badge&logo=pinecone&logoColor=white)](https://www.pinecone.io/)
 [![Groq](https://img.shields.io/badge/Groq%20LPU-F55036?style=for-the-badge&logo=speedtest&logoColor=white)](https://groq.com/)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6F00?style=for-the-badge&logo=databricks&logoColor=white)](https://www.trychroma.com/)
-[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
+[![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://render.com/)
 
 **Empowering 240+ million citizens with instant, accurate, and 100% confidential legal guidance under Pakistani Law.**
 
-[Explore Features](#-core-capabilities) • [System Architecture](#-system-architecture) • [Legal Coverage](#-legal-datasets--acts-covered) • [Quick Start](#-quick-start-guide) • [API Reference](#-api-endpoints)
+[Explore Features](#-core-capabilities) • [System Architecture](#-system-architecture) • [Legal Coverage](#-legal-datasets--acts-covered) • [Quick Start](#-quick-start-guide) • [Live Deployment](#-cloud-deployment-render--vercel)
 
 </div>
 
@@ -27,12 +27,12 @@ In Pakistan, accessing quality legal counsel is often intimidating, geographical
 
 ## 🎯 Core Capabilities
 
-- 🔍 **Strict RAG (Retrieval-Augmented Generation):** Backed by a dense vector database of Pakistani Acts. The agent **never hallucinates**; it explicitly cites specific sections (e.g., *Section 154 CrPC*, *Section 489-F PPC*, *Section 21 PECA 2016*).
+- 🔍 **100% Cloud Serverless RAG:** Powered by **Pinecone Cloud Vector DB** (`multilingual-e5-large` 1024-dim embeddings). Zero local CPU/GPU/RAM overhead; **never hallucinates** and explicitly cites specific sections (e.g., *Section 154 CrPC*, *Section 489-F PPC*, *Section 16 PECA 2016*).
 - 🗣️ **Trilingual Fluency:** Seamlessly comprehends and replies in **Pure English**, **Roman Urdu** (*"meri bike chori hogyi"*), or **Proper Urdu Script** (*"میرا مسئلہ یہ ہے"*).
-- 🎙️ **Voice Consultation Room:** Integrated with `whisper-large-v3` for speech transcription and `edge-tts` for natural Pakistani voice responses (`ur-PK-UzmaNeural`).
-- 📁 **Multi-Session Case Management:** Create, manage, and switch between separate consultation sessions with auto-titling and transcript export.
-- ⚡ **Ultra-Lightweight & CPU-Optimized:** Engineered with `all-MiniLM-L6-v2` and thread-controlled PyTorch execution, ensuring **sub-second responses** with minimal CPU/RAM footprint and zero laptop heatup.
-- 🛡️ **Strict Non-Legal Refusal:** Built-in safeguards reject non-legal queries (e.g., cooking recipes or general chat) to maintain legal integrity.
+- 🎙️ **Voice Consultation Room:** Integrated with `whisper-large-v3` via Groq for speech transcription and `edge-tts` for natural Pakistani voice responses (`ur-PK-UzmaNeural`).
+- 📁 **Persistent Case Session Management:** Multi-session case management stored cleanly in browser `localStorage` across refreshes, complete with 1-click text case transcript export.
+- 🎨 **High-Class SaaS UI:** Clean, spacious, and modern interface with dynamic light mode, theme toggle (☀️/🌙), interactive starter scenario cards, and statutory law coverage grid.
+- ⚡ **Lightning Fast Speed:** Sub-second retrieval and legal advice synthesis using Groq's LPU acceleration engines.
 
 ---
 
@@ -40,23 +40,24 @@ In Pakistan, accessing quality legal counsel is often intimidating, geographical
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Layer (React + Vite + Framer Motion)"]
+    subgraph Client ["Client Layer (React 19 + Vite + Framer Motion)"]
         UI[Consultation Room UI]
         Audio[Voice Recorder / Mic]
-        Sessions[Case History State]
+        Sessions[Case History State - localStorage]
     end
 
-    subgraph Backend ["Backend API (FastAPI)"]
+    subgraph Backend ["Cloud Backend API (FastAPI / Render)"]
         Router{Request Router}
-        TextEndpoint["/chat/text"]
-        AudioEndpoint["/chat/audio"]
-        WhisperEngine[Whisper Large v3 - Groq]
+        TextEndpoint["POST /chat/text"]
+        AudioEndpoint["POST /chat/audio"]
+        HealthEndpoint["GET /"]
+        WhisperEngine[Whisper Large v3 - Groq API]
         TTSEngine[Edge TTS Engine]
     end
 
-    subgraph Intelligence ["RAG Pipeline & Knowledge Store"]
-        VecDB[(ChromaDB Vector Store\n1,280+ Legal Chunks)]
-        Embedder["sentence-transformers/all-MiniLM-L6-v2\n(CPU-Optimized, 384-dim)"]
+    subgraph Intelligence ["Cloud RAG Pipeline & Vector Store"]
+        VecDB[(Pinecone Cloud Vector Store\n2,800+ Pakistani Law Chunks)]
+        Embedder["Pinecone Cloud Inference\n(multilingual-e5-large 1024-dim)"]
         LLM["Qwen 3.8 27B / Groq LPU Engine\n(High-Precision Legal Reasoning)"]
     end
 
@@ -65,7 +66,7 @@ flowchart TD
     AudioEndpoint --> WhisperEngine --> Router
     TextEndpoint --> Router
 
-    Router -->|Semantic Search| Embedder --> VecDB
+    Router -->|Cloud Embedding Request| Embedder --> VecDB
     VecDB -->|Relevant Legal Statutes| LLM
     LLM -->|Structured Legal Advice| Router
 
@@ -83,20 +84,20 @@ Haqooq AI is grounded in verified, structured Pakistani legal databases:
 | :--- | :--- | :--- |
 | **Pakistan Penal Code (PPC 1860)** | Criminal offenses, theft, robbery, fraud, dishonest cheques | Section 378/379 (Theft), Section 489-F (Dishonored Cheque), Section 420 (Cheating) |
 | **Code of Criminal Procedure (CrPC 1898)** | Police powers, FIR registration, bail, Justice of Peace | Section 154 (Mandatory FIR), Section 22-A/22-B (Ex-Officio Justice of Peace), Section 497/498 (Bail) |
-| **PECA 2016 & FIA Rules** | Cybercrime, unauthorized access, online harassment, blackmail | Section 14 (Unauthorized identity info), Section 20/21 (Cyberstalking & dignity of natural person) |
+| **PECA 2016 & FIA Rules** | Cybercrime, unauthorized access, online harassment, blackmail | Section 14 (Unauthorized identity info), Section 16 (Cyber fraud), Section 20/21 (Cyberstalking) |
 | **Muslim Family Laws Ordinance 1961** | Marriage, Talaq, Khula, Maintenance, Succession | Section 7 (Talaq Notice to Union Council), Section 9 (Wife & Child Maintenance) |
-| **Limitation Act 1908** | Statutory deadlines for filing suits, appeals, and petitions | Period of limitation for recovery, civil appeals, and revisions |
+| **Transfer of Property Act 1882** | Land ownership, lease agreements, tenant eviction notices | Sale of property, tenancy eviction procedures |
 
 ---
 
 ## 🛠️ Tech Stack & Engineering Highlights
 
-- **Frontend:** React 18, Vite, Framer Motion, Lucide Icons, React Markdown, Remark GFM.
-- **Backend Framework:** FastAPI (Python 3.9+ / 3.13 ready) with non-blocking threadpool offloading.
-- **Vector Database:** ChromaDB with persistent SQLite storage.
-- **Embedding Model:** `sentence-transformers/all-MiniLM-L6-v2` (~80 MB, 22M params) with single-thread threadpool pinning (`torch.set_num_threads(1)`) to eliminate CPU spikes.
+- **Frontend:** React 19, Vite, Framer Motion, Lucide Icons, React Markdown, Remark GFM.
+- **Backend Framework:** FastAPI (Python 3.11 / 3.13 ready) with CORS security and root health check routes.
+- **Vector Database:** Pinecone Serverless Cloud Vector Store (`haqooq-legal-db`).
+- **Embedding Model:** Pinecone Cloud Inference `multilingual-e5-large` (1024-dim, 100% Zero-RAM Cloud Execution).
 - **Inference Engine:** `qwen/qwen3.8-27b` via **Groq Cloud API** for ultra-fast, token-efficient legal synthesis.
-- **Speech-to-Text:** `whisper-large-v3` with custom script detection for Urdu and English audio.
+- **Speech-to-Text:** `whisper-large-v3` with script auto-detection for Urdu and English audio.
 - **Text-to-Speech:** Microsoft `edge-tts` streaming natural Pakistani Urdu (`ur-PK-UzmaNeural`) and English (`en-US-AriaNeural`).
 
 ---
@@ -104,9 +105,10 @@ Haqooq AI is grounded in verified, structured Pakistani legal databases:
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Python 3.9+ installed
+- Python 3.11+ installed
 - Node.js (v18+) & npm installed
 - Free API key from [Groq Console](https://console.groq.com/)
+- Free API key from [Pinecone Console](https://app.pinecone.io/)
 
 ---
 
@@ -127,20 +129,21 @@ Create a `.env` file in the project root:
 
 ```env
 GROQ_API_KEY=gsk_your_groq_api_key_here
-CHROMA_PERSIST_DIR=./data/chroma_db
+PINECONE_API_KEY=pcsk_your_pinecone_api_key_here
+PINECONE_INDEX_NAME=haqooq-legal-db
 ```
 
 ---
 
-### 2️⃣ Ingest Legal Datasets (One-Time Setup)
+### 2️⃣ Cloud Data Ingestion (One-Time Setup)
 
-Ingest Pakistani legal statutes into your local ChromaDB:
+Ingest Pakistani legal statutes into your Pinecone Cloud Index:
 
 ```bash
 pip install -r requirements.txt
-python -m data.ingest
+python data/ingest.py
 ```
-*✨ Takes ~15–30 seconds to parse, chunk, and embed all legal acts.*
+*✨ Parses, chunks, and uploads all 2,800+ legal chunks directly to Pinecone Cloud.*
 
 ---
 
@@ -149,13 +152,13 @@ python -m data.ingest
 ```bash
 python -m uvicorn backend.api:app --reload --port 8000
 ```
-Backend will be live at: `http://127.0.0.1:8000` (Swagger UI at `/docs`).
+Backend will be live at `http://127.0.0.1:8000` (Health check at `/`).
 
 ---
 
 ### 4️⃣ Start Frontend Application
 
-Open a **second terminal** tab:
+Open a **second terminal**:
 
 ```bash
 cd frontend
@@ -166,9 +169,28 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
 ---
 
+## 🌐 Cloud Deployment (Render & Vercel)
+
+### Backend Deployment (Render.com)
+- **Runtime:** Docker (uses root `Dockerfile`)
+- **Port:** 8000
+- **Environment Variables:** `PINECONE_API_KEY`, `PINECONE_INDEX_NAME`, `GROQ_API_KEY`
+- **Live URL:** `https://haqooq.onrender.com`
+
+### Frontend Deployment (Vercel / Netlify)
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Environment Variable:** `VITE_API_URL=https://haqooq.onrender.com`
+
+---
+
 ## 🔌 API Endpoints
 
-### 1. Text Consultation
+### 1. Health Check
+- **Endpoint:** `GET /`
+- **Response:** `{"status": "online", "service": "Haqooq AI Legal Advisor API"}`
+
+### 2. Text Consultation
 - **Endpoint:** `POST /chat/text`
 - **Payload:**
   ```json
@@ -185,45 +207,24 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
   }
   ```
 
-### 2. Voice Consultation
+### 3. Voice Consultation
 - **Endpoint:** `POST /chat/audio`
 - **Payload:** `multipart/form-data` with `audio` (.webm/.wav file) and `history` (JSON string).
 - **Response:**
   ```json
   {
     "transcription": "Mera WhatsApp hack hogya hai...",
-    "response": "PECA 2016 ke Section 14 aur 21 ke tehat...",
+    "response": "PECA 2016 ke Section 16 ke tehat...",
     "audio": "UklGRiQAAABXQVZFZm10IBAAAAAB..."
   }
   ```
 
 ---
 
-## 🧪 Sample Queries to Try
-
-| Category | Sample Query | Supported Language |
-| :--- | :--- | :--- |
-| **Cybercrime** | *"I was scammed in a WhatsApp group and lost money. Under which PECA sections can I report to FIA?"* | English |
-| **Criminal Law** | *"Police station mein SHO FIR darj nahi kar raha, Sessions Court mein 22-A petition ka tareeqa batao."* | Roman Urdu |
-| **Family Law** | *"فیملی کورٹ سے بچوں کا نان نفقہ اور خرچہ حاصل کرنے کے لیے کون سے کاغذات درکار ہیں؟"* | Urdu Script |
-| **Cheque Fraud** | *"Bank se cheque bounce hone par 489-F PPC ke tehat FIR ka mukammal legal procedure kya hai?"* | Roman Urdu |
-| **Safety Refusal** | *"Biryani ki recipe batao"* | Auto-Refusal |
-
----
-
-## 🔮 Roadmap & Future Scope
-
-- [ ] **WhatsApp Bot Integration:** Reach rural populations directly through WhatsApp voice notes.
-- [ ] **High Court Cause-List Tracker:** Real-time integration with High Court APIs for automated hearing reminders.
-- [ ] **Automated Legal Notice Generator:** Export ready-to-sign PDF notices (e.g., Section 7 Talaq notice or Section 154 police applications).
-- [ ] **PWA / Mobile App Distribution:** 1-click install on Android & iOS via Capacitor.
-
----
-
 ## ⚖️ Legal Disclaimer
 
 > [!IMPORTANT]
-> **Haqooq AI** is an artificial intelligence-driven legal awareness platform designed to assist citizens in understanding Pakistani law. It **does not** constitute formal attorney-client representation. For complex litigation, representation in court, or formal proceedings, users are strongly advised to engage a licensed Advocate of the High Court / Supreme Court of Pakistan.
+> **Haqooq AI** is an artificial intelligence-driven legal awareness platform designed to assist citizens in understanding Pakistani law. It **does not** constitute formal attorney-client representation. For complex litigation or representation in court, users are strongly advised to engage a licensed Advocate of the High Court / Supreme Court of Pakistan.
 
 ---
 

@@ -352,13 +352,14 @@
 }
 
 .badge-top-left {
-  top: 18px;
-  left: 18px;
+  top: 16px;
+  left: 16px;
 }
 
 .badge-bottom-right {
-  bottom: 14px;
-  right: 18px;
+  bottom: 8px;
+  right: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 .badge-icon {

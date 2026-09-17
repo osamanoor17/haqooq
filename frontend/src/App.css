@@ -83,24 +83,53 @@
 .nav-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.nav-brand:hover {
+  opacity: 0.95;
 }
 
 .brand-icon-wrapper {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 60%, #0d9488 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.25);
-  transition: transform 0.3s ease;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(5, 150, 105, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.brand-icon-wrapper:hover {
-  transform: scale(1.05);
+.nav-brand:hover .brand-icon-wrapper {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.5);
+}
+
+.brand-icon-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  opacity: 0;
+  filter: blur(8px);
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.nav-brand:hover .brand-icon-glow {
+  opacity: 0.65;
+}
+
+.brand-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
 }
 
 .brand-text {
@@ -108,18 +137,56 @@
   flex-direction: column;
 }
 
+.brand-name-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .brand-name {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--text-main);
+  font-size: 1.35rem;
+  font-weight: 900;
   letter-spacing: -0.5px;
   line-height: 1.1;
+  background: linear-gradient(135deg, #059669 0%, #10b981 60%, #0284c7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme='dark'] .brand-name {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-ai-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.12) 0%, rgba(14, 165, 233, 0.12) 100%);
+  color: var(--primary);
+  border: 1px solid rgba(5, 150, 105, 0.25);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.08);
 }
 
 .brand-tag {
-  font-size: 0.75rem;
-  color: var(--primary);
-  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.flag-dot {
+  font-size: 0.85rem;
+  line-height: 1;
 }
 
 .nav-actions {
@@ -225,6 +292,7 @@
 .gradient-text {
   background: linear-gradient(135deg, var(--primary) 0%, var(--blue-accent) 60%, var(--primary-hover) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1124,13 +1192,15 @@
 .input-form {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--bg-card-subtle);
   border: 1px solid var(--border-light);
-  padding: 6px 8px 6px 18px;
-  border-radius: var(--radius-full);
+  padding: 5px 6px 5px 18px;
+  border-radius: 28px;
   box-shadow: var(--shadow-xs);
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-form:focus-within {
@@ -1141,6 +1211,7 @@
 
 .chat-text-input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--text-main);
@@ -1155,7 +1226,8 @@
 .input-btn-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .mic-toggle-btn {
@@ -1228,10 +1300,41 @@
 .footer-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 30px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.footer-brand:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+}
+
+.footer-logo-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-brand-text {
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--text-main);
+}
+
+.footer-brand-ai {
+  color: var(--primary);
 }
 
 .footer-disclaimer {
@@ -1440,7 +1543,8 @@
   }
 
   .input-form {
-    padding: 4px 6px 4px 14px;
+    padding: 4px 5px 4px 14px;
+    border-radius: 26px;
   }
 
   .chat-text-input {
@@ -1450,6 +1554,7 @@
   .mic-toggle-btn, .send-query-btn {
     width: 36px;
     height: 36px;
+    flex-shrink: 0;
   }
 
   .app-footer {
@@ -1469,6 +1574,34 @@
 }
 
 @media (max-width: 480px) {
+  .nav-brand {
+    gap: 10px;
+  }
+
+  .brand-icon-wrapper {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .brand-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .brand-name {
+    font-size: 1.1rem;
+  }
+
+  .brand-ai-badge {
+    font-size: 0.58rem;
+    padding: 1px 6px;
+  }
+
+  .brand-tag {
+    font-size: 0.66rem;
+  }
+
   .hero-heading {
     font-size: 1.8rem;
   }

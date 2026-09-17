@@ -373,13 +373,19 @@ function App() {
       {/* Main Navbar */}
       <nav className="navbar">
         <div className="nav-container">
-          <div className="nav-brand">
+          <div className="nav-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} title="Haqooq AI - Home">
             <div className="brand-icon-wrapper">
-              <Scale size={24} className="brand-icon" />
+              <div className="brand-icon-glow"></div>
+              <Scale size={22} className="brand-icon" />
             </div>
             <div className="brand-text">
-              <span className="brand-name">Haqooq AI</span>
-              <span className="brand-tag">Pakistani Legal Advisor</span>
+              <div className="brand-name-group">
+                <span className="brand-name">Haqooq</span>
+                <span className="brand-ai-badge">AI</span>
+              </div>
+              <span className="brand-tag">
+                <span className="flag-dot">🇵🇰</span> Pakistani Legal Advisor
+              </span>
             </div>
           </div>
 
@@ -794,9 +800,11 @@ function App() {
       {/* Footer */}
       <footer className="app-footer">
         <div className="footer-inner">
-          <div className="footer-brand">
-            <Scale size={20} />
-            <span>Haqooq AI</span>
+          <div className="footer-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} title="Back to Top">
+            <div className="footer-logo-icon">
+              <Scale size={18} />
+            </div>
+            <span className="footer-brand-text">Haqooq <span className="footer-brand-ai">AI</span></span>
           </div>
           <p className="footer-disclaimer">
             <strong>Legal Notice:</strong> Haqooq AI is an AI-powered legal awareness agent for the Islamic Republic of Pakistan. It does not replace licensed legal representation in court.

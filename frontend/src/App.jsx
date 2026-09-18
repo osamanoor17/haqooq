@@ -112,6 +112,13 @@ function App() {
     } catch (e) {}
   }, [currentSessionId]);
 
+  // Ensure currentSessionId always points to a valid session
+  useEffect(() => {
+    if (sessions.length > 0 && !sessions.some(s => s.id === currentSessionId)) {
+      setCurrentSessionId(sessions[0].id);
+    }
+  }, [sessions, currentSessionId]);
+
   // Theme state (light / dark)
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('haqooq_theme') || 'light';
@@ -173,7 +180,7 @@ function App() {
         if (title === 'New Legal Consultation' && newMessages.length > 0) {
           const firstUserMsg = newMessages.find(m => m.role === 'user');
           if (firstUserMsg) {
-            let content = firstUserMsg.content.replace('[Voice Note]', '').trim();
+            let content = firstUserMsg.content.replace('🎙️ [Voice Consultation]', '').replace('[Voice Note]', '').trim();
             title = content.substring(0, 32) + (content.length > 32 ? '...' : '');
           }
         }
@@ -190,10 +197,21 @@ function App() {
     setCurrentSessionId(newId);
   };
 
+  const clearCurrentChat = () => {
+    setSessions(prev => prev.map(s => {
+      if (s.id === currentSessionId) {
+        return { ...s, title: 'New Legal Consultation', messages: [] };
+      }
+      return s;
+    }));
+  };
+
   const deleteSession = (id, e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     if (sessions.length === 1) {
-      setSessions([{ id: Date.now(), title: 'New Legal Consultation', messages: [] }]);
+      const newId = Date.now();
+      setSessions([{ id: newId, title: 'New Legal Consultation', messages: [] }]);
+      setCurrentSessionId(newId);
       return;
     }
     const filtered = sessions.filter(s => s.id !== id);
@@ -662,8 +680,8 @@ function App() {
                 </div>
                 <button 
                   className="clear-chat-btn"
-                  onClick={(e) => deleteSession(currentSessionId, e)}
-                  title="Clear or delete this chat session"
+                  onClick={clearCurrentChat}
+                  title="Clear messages in this chat session"
                 >
                   <Trash2 size={15} />
                   <span>Clear Chat</span>
